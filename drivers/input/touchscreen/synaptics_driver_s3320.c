@@ -1574,7 +1574,7 @@ void int_touch(void)
 
 #endif
 
-		if (version_is_s3508 == 0) { //for 15811 panel
+		if (version_is_s3508 != 0) { //for 15811 panel
 			points.x = 1079 - points.x;
 			points.y = 1919 - points.y;
 		}
