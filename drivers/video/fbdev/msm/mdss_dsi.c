@@ -2801,32 +2801,12 @@ static int mdss_dsi_event_handler(struct mdss_panel_data *pdata,
 		rc = mdss_dsi_panel_get_hbm_mode(ctrl_pdata);
 		break;
 
-	case MDSS_EVENT_PANEL_SET_SRGB_MODE:
-		ctrl_pdata->SRGB_mode = (int)(unsigned long) arg;
-		if (ctrl_pdata->SRGB_mode == 1)
-			ctrl_pdata->dci_p3_mode = 0;
-		mdss_dsi_panel_set_srgb_mode(ctrl_pdata, (int)(unsigned long) ctrl_pdata->SRGB_mode);
+	case MDSS_EVENT_PANEL_SET_COLOR_PROFILE:
+		ctrl_pdata->color_profile = (int)(unsigned long) arg;
+		mdss_dsi_panel_set_color_profile(ctrl_pdata, (int)(unsigned long) ctrl_pdata->color_profile);
 		break;
-	case MDSS_EVENT_PANEL_GET_SRGB_MODE:
-		rc = mdss_dsi_panel_get_srgb_mode(ctrl_pdata);
-		break;
-
-	case MDSS_EVENT_PANEL_SET_ADOBE_RGB_MODE:
-		ctrl_pdata->Adobe_RGB_mode = (int)(unsigned long) arg;
-		mdss_dsi_panel_set_adobe_rgb_mode(ctrl_pdata, (int)(unsigned long) ctrl_pdata->Adobe_RGB_mode);
-		break;
-	case MDSS_EVENT_PANEL_GET_ADOBE_RGB_MODE:
-		rc = mdss_dsi_panel_get_adobe_rgb_mode(ctrl_pdata);
-		break;
-
-	case MDSS_EVENT_PANEL_SET_DCI_P3_MODE:
-		ctrl_pdata->dci_p3_mode = (int)(unsigned long) arg;
-		if (ctrl_pdata->dci_p3_mode == 1)
-			ctrl_pdata->SRGB_mode = 0;
-		mdss_dsi_panel_set_dci_p3_mode(ctrl_pdata, (int)(unsigned long) ctrl_pdata->dci_p3_mode);
-		break;
-	case MDSS_EVENT_PANEL_GET_DCI_P3_MODE:
-		rc = mdss_dsi_panel_get_dci_p3_mode(ctrl_pdata);
+	case MDSS_EVENT_PANEL_GET_COLOR_PROFILE:
+		rc = mdss_dsi_panel_get_color_profile(ctrl_pdata);
 		break;
 
 	case MDSS_EVENT_PANEL_SET_NIGHT_MODE:

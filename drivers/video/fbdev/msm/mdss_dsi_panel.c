@@ -1056,112 +1056,69 @@ int mdss_dsi_panel_get_hbm_mode(struct mdss_dsi_ctrl_pdata *ctrl)
 	return ctrl->hbm_mode;
 }
 
-int mdss_dsi_panel_set_srgb_mode(struct mdss_dsi_ctrl_pdata *ctrl, int level)
+int mdss_dsi_panel_set_color_profile(struct mdss_dsi_ctrl_pdata *ctrl, int profile)
 {
-	struct dsi_panel_cmds *srgb_on_cmds;
-	struct dsi_panel_cmds* srgb_off_cmds;
+	struct dsi_panel_cmds *cmds = NULL;
 
 	mutex_lock(&ctrl->panel_mode_lock);
+
 	if (!ctrl->is_panel_on) {
-		mutex_unlock(&ctrl->panel_mode_lock);
-		return 0;
+		goto end;
 	}
-	srgb_on_cmds = &ctrl->srgb_on_cmds;
-	srgb_off_cmds = &ctrl->srgb_off_cmds;
-	if (level) {
-		if (srgb_on_cmds->cmd_cnt) {
-			mdss_dsi_panel_cmds_send(ctrl, srgb_on_cmds, CMD_REQ_COMMIT);
-			pr_err("sRGB Mode On.\n");
-		} else {
-			pr_err("This panel not support sRGB mode on.\n");
+
+	if (ctrl->last_color_profile == profile) {
+		goto end;
+	}
+
+	if (profile == PROFILE_NONE) {
+		switch (ctrl -> last_color_profile) {
+			case PROFILE_SRGB:
+				cmds = &ctrl->srgb_off_cmds;
+				break;
+			case PROFILE_ADOBE_RGB:
+				cmds = &ctrl->adobe_rgb_off_cmds;
+				break;
+			case PROFILE_DCI_P3:
+				cmds = &ctrl->dci_p3_off_cmds;
+				break;
 		}
 	} else {
-		if (srgb_off_cmds->cmd_cnt) {
-			mdss_dsi_panel_cmds_send(ctrl, srgb_off_cmds, CMD_REQ_COMMIT);
-			pr_err("sRGB Mode off.\n");
-		} else {
-			pr_err("This panel not support sRGB mode off.\n");
+		switch (profile) {
+			case PROFILE_SRGB:
+				cmds = &ctrl->srgb_on_cmds;
+				break;
+			case PROFILE_ADOBE_RGB:
+				cmds = &ctrl->adobe_rgb_on_cmds;
+				break;
+			case PROFILE_DCI_P3:
+				cmds = &ctrl->dci_p3_on_cmds;
+				break;
 		}
 	}
+
+	if (cmds == NULL) {
+		pr_err("Nothing to do.\n");
+		goto end;
+	}
+
+	if (!cmds->cmd_cnt) {
+		pr_err("The panel does not support mode: %d\n", profile);
+		goto end;
+	}
+
+	mdss_dsi_panel_cmds_send(ctrl, cmds, CMD_REQ_COMMIT);
+	pr_err("Panel switched to mode: %d\n", profile);
+
+	ctrl->last_color_profile = profile;
+
+end:
 	mutex_unlock(&ctrl->panel_mode_lock);
 	return 0;
 }
 
-int mdss_dsi_panel_get_srgb_mode(struct mdss_dsi_ctrl_pdata *ctrl)
+int mdss_dsi_panel_get_color_profile(struct mdss_dsi_ctrl_pdata *ctrl)
 {
-	return ctrl->SRGB_mode;
-}
-
-int mdss_dsi_panel_set_adobe_rgb_mode(struct mdss_dsi_ctrl_pdata *ctrl, int level)
-{
-	struct dsi_panel_cmds *adobe_rgb_on_cmds;
-	struct dsi_panel_cmds *adobe_rgb_off_cmds;
-
-	mutex_lock(&ctrl->panel_mode_lock);
-	if (!ctrl->is_panel_on) {
-		mutex_unlock(&ctrl->panel_mode_lock);
-		return 0;
-	}
-	adobe_rgb_on_cmds = &ctrl->Adobe_RGB_on_cmds;
-	adobe_rgb_off_cmds = &ctrl->Adobe_RGB_off_cmds;
-	if (level) {
-		if (adobe_rgb_on_cmds->cmd_cnt) {
-			mdss_dsi_panel_cmds_send(ctrl, adobe_rgb_on_cmds, CMD_REQ_COMMIT);
-			pr_err("Adobe RGB Mode On.\n");
-		} else {
-			pr_err("This Panel not support Adobe RGB mode On.\n");
-		}
-	} else {
-		if (adobe_rgb_off_cmds->cmd_cnt) {
-			mdss_dsi_panel_cmds_send(ctrl, adobe_rgb_off_cmds, CMD_REQ_COMMIT);
-			pr_err("Adobe RGB Mode Off.\n");
-		} else {
-			pr_err("This Panel not support Adobe RGB mode Off.\n");
-		}
-	}
-	mutex_unlock(&ctrl->panel_mode_lock);
-	return 0;
-}
-
-int mdss_dsi_panel_get_adobe_rgb_mode(struct mdss_dsi_ctrl_pdata *ctrl)
-{
-	return ctrl->Adobe_RGB_mode;
-}
-
-int mdss_dsi_panel_set_dci_p3_mode(struct mdss_dsi_ctrl_pdata *ctrl, int level)
-{
-	struct dsi_panel_cmds *dci_p3_on_cmds;
-	struct dsi_panel_cmds *dci_p3_off_cmds;
-
-	mutex_lock(&ctrl->panel_mode_lock);
-	if (!ctrl->is_panel_on) {
-		mutex_unlock(&ctrl->panel_mode_lock);
-		return 0;
-	}
-	dci_p3_on_cmds = &ctrl->dci_p3_on_cmds;
-	dci_p3_off_cmds = &ctrl->dci_p3_off_cmds;
-	if (level) {
-		if (dci_p3_on_cmds->cmd_cnt) {
-			mdss_dsi_panel_cmds_send(ctrl, dci_p3_on_cmds, CMD_REQ_COMMIT);
-			pr_err("DCI-P3 Mode On.\n");
-		} else {
-			pr_err("This Panel not support DCI-P3 mode On.\n");
-		}
-	} else {
-		if (dci_p3_off_cmds->cmd_cnt) {
-			mdss_dsi_panel_cmds_send(ctrl, dci_p3_off_cmds, CMD_REQ_COMMIT);
-			pr_err("DCI-P3 Mode Off.\n");
-		} else {
-			pr_err("This Panel not support DCI-P3 mode Off.\n");
-		}
-	}
-	mutex_unlock(&ctrl->panel_mode_lock);
-	return 0;
-}
-
-int mdss_dsi_panel_get_dci_p3_mode(struct mdss_dsi_ctrl_pdata *ctrl)
-{
-	return ctrl->dci_p3_mode;
+	return ctrl->color_profile;
 }
 
 int mdss_dsi_panel_set_night_mode(struct mdss_dsi_ctrl_pdata *ctrl, int level)
@@ -1247,17 +1204,7 @@ static int mdss_dsi_panel_on(struct mdss_panel_data *pdata)
 		mdss_dsi_panel_set_acl(ctrl, mdss_dsi_panel_get_acl_mode(ctrl));
 	}
 
-	if (mdss_dsi_panel_get_srgb_mode(ctrl)) {
-		mdss_dsi_panel_set_srgb_mode(ctrl, mdss_dsi_panel_get_srgb_mode(ctrl));
-	}
-
-	if (mdss_dsi_panel_get_adobe_rgb_mode(ctrl)) {
-		mdss_dsi_panel_set_adobe_rgb_mode(ctrl, mdss_dsi_panel_get_adobe_rgb_mode(ctrl));
-	}
-
-	if (mdss_dsi_panel_get_dci_p3_mode(ctrl)) {
-		mdss_dsi_panel_set_dci_p3_mode(ctrl, mdss_dsi_panel_get_dci_p3_mode(ctrl));
-	}
+	mdss_dsi_panel_set_color_profile(ctrl, mdss_dsi_panel_get_color_profile(ctrl));
 
 	if (mdss_dsi_panel_get_night_mode(ctrl)) {
 		mdss_dsi_panel_set_night_mode(ctrl, mdss_dsi_panel_get_night_mode(ctrl));
@@ -3237,17 +3184,11 @@ static int mdss_panel_parse_dt(struct device_node *np,
 	mdss_dsi_parse_dcs_cmds(np, &ctrl_pdata->srgb_off_cmds,
 			"qcom,mdss-dsi-panel-srgb-off-command",
 			"qcom,mdss-dsi-srgb-command-state");
-	mdss_dsi_parse_dcs_cmds(np, &ctrl_pdata->night_mode_on_cmds,
-			"qcom,mdss-dsi-panel-night-mode-on-command",
-			"qcom,mdss-dsi-night-mode-command-state");
-	mdss_dsi_parse_dcs_cmds(np, &ctrl_pdata->night_mode_off_cmds,
-			"qcom,mdss-dsi-panel-night-mode-off-command",
-			"qcom,mdss-dsi-night-mode-command-state");
 
-	mdss_dsi_parse_dcs_cmds(np, &ctrl_pdata->Adobe_RGB_on_cmds,
+	mdss_dsi_parse_dcs_cmds(np, &ctrl_pdata->adobe_rgb_on_cmds,
 			"qcom,mdss-dsi-panel-Adobe-rgb-on-command",
 			"qcom,mdss-dsi-Adobe-rgb-command-state");
-	mdss_dsi_parse_dcs_cmds(np, &ctrl_pdata->Adobe_RGB_off_cmds,
+	mdss_dsi_parse_dcs_cmds(np, &ctrl_pdata->adobe_rgb_off_cmds,
 			"qcom,mdss-dsi-panel-Adobe-rgb-off-command",
 			"qcom,mdss-dsi-Adobe-rgb-command-state");
 
@@ -3257,6 +3198,13 @@ static int mdss_panel_parse_dt(struct device_node *np,
 	mdss_dsi_parse_dcs_cmds(np, &ctrl_pdata->dci_p3_off_cmds,
 			"qcom,mdss-dsi-panel-dci-p3-off-command",
 			"qcom,mdss-dsi-dci-p3-command-state");
+
+	mdss_dsi_parse_dcs_cmds(np, &ctrl_pdata->night_mode_on_cmds,
+			"qcom,mdss-dsi-panel-night-mode-on-command",
+			"qcom,mdss-dsi-night-mode-command-state");
+	mdss_dsi_parse_dcs_cmds(np, &ctrl_pdata->night_mode_off_cmds,
+			"qcom,mdss-dsi-panel-night-mode-off-command",
+			"qcom,mdss-dsi-night-mode-command-state");
 
 	ctrl_pdata->high_brightness_panel = of_property_read_bool(np,
 					"qcom,mdss-dsi-high-brightness-panel");
