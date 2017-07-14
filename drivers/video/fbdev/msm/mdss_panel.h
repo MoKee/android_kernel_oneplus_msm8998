@@ -305,32 +305,34 @@ enum mdss_intf_events {
 	MDSS_EVENT_DEEP_COLOR,
 	MDSS_EVENT_DISABLE_PANEL,
 	MDSS_EVENT_UPDATE_PANEL_PPM,
+
 	MDSS_EVENT_PANEL_SET_ACL,
 	MDSS_EVENT_PANEL_GET_ACL,
-	//#endif
+
 	MDSS_EVENT_PANEL_SET_HBM_MODE,
 	MDSS_EVENT_PANEL_GET_HBM_MODE,
-	//#endif
+
 	MDSS_EVENT_PANEL_SET_SRGB_MODE,
 	MDSS_EVENT_PANEL_GET_SRGB_MODE,
-	//#endif
+
 	MDSS_EVENT_PANEL_SET_ADOBE_RGB_MODE,
 	MDSS_EVENT_PANEL_GET_ADOBE_RGB_MODE,
-	//#endif
+
 	MDSS_EVENT_PANEL_SET_DCI_P3_MODE,
 	MDSS_EVENT_PANEL_GET_DCI_P3_MODE,
-	//#endif
+
 	MDSS_EVENT_PANEL_SET_NIGHT_MODE,
 	MDSS_EVENT_PANEL_GET_NIGHT_MODE,
+
 	MDSS_EVENT_PANEL_SET_NIGHT_MODE3500K,
 	MDSS_EVENT_PANEL_GET_NIGHT_MODE3500K,
 
 	MDSS_EVENT_PANEL_SET_NIGHT_MODE3800K,
 	MDSS_EVENT_PANEL_GET_NIGHT_MODE3800K,
-			
+
 	MDSS_EVENT_PANEL_SET_NIGHT_MODE4000K,
 	MDSS_EVENT_PANEL_GET_NIGHT_MODE4000K,
-				
+
 	MDSS_EVENT_PANEL_SET_NIGHT_MODE4300K,
 	MDSS_EVENT_PANEL_GET_NIGHT_MODE4300K,
 
@@ -363,10 +365,10 @@ enum mdss_intf_events {
 
 	MDSS_EVENT_PANEL_SET_NIGHT_MODE7200K,
 	MDSS_EVENT_PANEL_GET_NIGHT_MODE7200K,
-	//#endif
+
 	MDSS_EVENT_PANEL_SET_READING_MODE,
 	MDSS_EVENT_PANEL_GET_READING_MODE,
-	//#endif
+
 	MDSS_EVENT_DSI_TIMING_DB_CTRL,
 	MDSS_EVENT_AVR_MODE,
 	MDSS_EVENT_REGISTER_CLAMP_HANDLER,
@@ -1025,7 +1027,7 @@ struct mdss_panel_timing {
 
 struct mdss_panel_data {
 	struct mdss_panel_info panel_info;
-	void (*set_backlight) (struct mdss_panel_data *pdata, u32 bl_level);
+	void (*set_backlight)(struct mdss_panel_data *pdata, u32 bl_level);
 	int (*apply_display_setting)(struct mdss_panel_data *pdata, u32 mode);
 	unsigned char *mmss_cc_base;
 
@@ -1041,7 +1043,7 @@ struct mdss_panel_data {
 	 * these events to perform appropriate actions for panel initialization
 	 * and teardown.
 	 */
-	int (*event_handler) (struct mdss_panel_data *pdata, int e, void *arg);
+	int (*event_handler)(struct mdss_panel_data *pdata, int e, void *arg);
 	struct device_node *(*get_fb_node)(struct platform_device *pdev);
 
 	struct list_head timings_list;
@@ -1097,13 +1099,13 @@ static inline u32 mdss_panel_get_framerate(struct mdss_panel_info *panel_info)
 		}
 	default:
 		pixel_total = (panel_info->lcdc.h_back_porch +
-			  panel_info->lcdc.h_front_porch +
-			  panel_info->lcdc.h_pulse_width +
-			  panel_info->xres) *
-			 (panel_info->lcdc.v_back_porch +
-			  panel_info->lcdc.v_front_porch +
-			  panel_info->lcdc.v_pulse_width +
-			  panel_info->yres);
+						panel_info->lcdc.h_front_porch +
+						panel_info->lcdc.h_pulse_width +
+						panel_info->xres) *
+				(panel_info->lcdc.v_back_porch +
+						panel_info->lcdc.v_front_porch +
+						panel_info->lcdc.v_pulse_width +
+						panel_info->yres);
 		if (pixel_total) {
 			rate = panel_info->clk_rate;
 			do_div(rate, pixel_total);
@@ -1127,7 +1129,7 @@ static inline int mdss_panel_get_vtotal(struct mdss_panel_info *pinfo)
 {
 	return pinfo->yres + pinfo->lcdc.v_back_porch +
 			pinfo->lcdc.v_front_porch +
-			pinfo->lcdc.v_pulse_width+
+			pinfo->lcdc.v_pulse_width +
 			pinfo->lcdc.border_top +
 			pinfo->lcdc.border_bottom;
 }
@@ -1148,7 +1150,7 @@ static inline int mdss_panel_get_htotal(struct mdss_panel_info *pinfo, bool
 	struct dsc_desc *dsc = NULL;
 
 	int adj_xres = pinfo->xres + pinfo->lcdc.border_left +
-				pinfo->lcdc.border_right;
+			pinfo->lcdc.border_right;
 
 	if (compression) {
 		if (pinfo->compression_mode == COMPRESSION_DSC) {
@@ -1156,13 +1158,13 @@ static inline int mdss_panel_get_htotal(struct mdss_panel_info *pinfo, bool
 			adj_xres = dsc->pclk_per_line;
 		} else if (pinfo->fbc.enabled) {
 			adj_xres = mult_frac(adj_xres,
-				pinfo->fbc.target_bpp, pinfo->bpp);
+							pinfo->fbc.target_bpp, pinfo->bpp);
 		}
 	}
 
 	return adj_xres + pinfo->lcdc.h_back_porch +
-		pinfo->lcdc.h_front_porch +
-		pinfo->lcdc.h_pulse_width;
+			pinfo->lcdc.h_front_porch +
+			pinfo->lcdc.h_pulse_width;
 }
 
 static inline bool is_dsc_compression(struct mdss_panel_info *pinfo)
@@ -1177,7 +1179,7 @@ static inline bool is_lm_configs_dsc_compatible(struct mdss_panel_info *pinfo,
 		u32 width, u32 height)
 {
 	if ((width % pinfo->dsc.slice_width) ||
-		(height % pinfo->dsc.slice_height))
+			(height % pinfo->dsc.slice_height))
 		return false;
 	return true;
 }
@@ -1186,13 +1188,13 @@ static inline bool is_valid_pu_dual_roi(struct mdss_panel_info *pinfo,
 		struct mdss_rect *first_roi, struct mdss_rect *second_roi)
 {
 	if ((first_roi->x != second_roi->x) || (first_roi->w != second_roi->w)
-		|| (first_roi->y > second_roi->y)
-		|| ((first_roi->y + first_roi->h) > second_roi->y)
-		|| (is_dsc_compression(pinfo) &&
-			!is_lm_configs_dsc_compatible(pinfo,
-				first_roi->w, first_roi->h) &&
-			!is_lm_configs_dsc_compatible(pinfo,
-				second_roi->w, second_roi->h))) {
+			|| (first_roi->y > second_roi->y)
+			|| ((first_roi->y + first_roi->h) > second_roi->y)
+			|| (is_dsc_compression(pinfo) &&
+					!is_lm_configs_dsc_compatible(pinfo,
+							first_roi->w, first_roi->h) &&
+					!is_lm_configs_dsc_compatible(pinfo,
+							second_roi->w, second_roi->h))) {
 		pr_err("Invalid multiple PU ROIs, roi0:{%d,%d,%d,%d}, roi1{%d,%d,%d,%d}\n",
 				first_roi->x, first_roi->y, first_roi->w,
 				first_roi->h, second_roi->x, second_roi->y,
@@ -1204,7 +1206,7 @@ static inline bool is_valid_pu_dual_roi(struct mdss_panel_info *pinfo,
 }
 
 int mdss_register_panel(struct platform_device *pdev,
-	struct mdss_panel_data *pdata);
+		struct mdss_panel_data *pdata);
 
 /*
  * mdss_panel_is_power_off: - checks if a panel is off
@@ -1253,7 +1255,7 @@ static inline bool mdss_panel_is_power_on(int panel_power_state)
 static inline bool mdss_panel_is_power_on_lp(int panel_power_state)
 {
 	return !mdss_panel_is_power_off(panel_power_state) &&
-		!mdss_panel_is_power_on_interactive(panel_power_state);
+			!mdss_panel_is_power_on_interactive(panel_power_state);
 }
 
 /**
@@ -1276,7 +1278,7 @@ static inline bool mdss_panel_is_power_on_ulp(int panel_power_state)
  * @fps: frame rate of the panel
  */
 static inline void mdss_panel_update_clk_rate(struct mdss_panel_info *pinfo,
-	u32 fps)
+		u32 fps)
 {
 	struct lcd_panel_info *lcdc = &pinfo->lcdc;
 	u32 htotal, vtotal;
@@ -1290,7 +1292,7 @@ static inline void mdss_panel_update_clk_rate(struct mdss_panel_info *pinfo,
 		pinfo->clk_rate = mult_frac(htotal * vtotal, fps, 1000);
 
 		pr_debug("vtotal %d, htotal %d, rate %llu\n",
-			vtotal, htotal, pinfo->clk_rate);
+				vtotal, htotal, pinfo->clk_rate);
 	}
 }
 
@@ -1301,31 +1303,31 @@ static inline void mdss_panel_update_clk_rate(struct mdss_panel_info *pinfo,
  */
 static inline u8 mdss_panel_calc_frame_rate(struct mdss_panel_info *pinfo)
 {
-		u32 pixel_total = 0;
-		u8 frame_rate = 0;
-		unsigned long pclk_rate = pinfo->mipi.dsi_pclk_rate;
-		u32 xres;
+	u32 pixel_total = 0;
+	u8 frame_rate = 0;
+	unsigned long pclk_rate = pinfo->mipi.dsi_pclk_rate;
+	u32 xres;
 
-		xres = pinfo->xres;
-		if (pinfo->compression_mode == COMPRESSION_DSC)
-			xres /= 3;
+	xres = pinfo->xres;
+	if (pinfo->compression_mode == COMPRESSION_DSC)
+		xres /= 3;
 
-		pixel_total = (pinfo->lcdc.h_back_porch +
-			  pinfo->lcdc.h_front_porch +
-			  pinfo->lcdc.h_pulse_width +
-			  xres) *
-			 (pinfo->lcdc.v_back_porch +
-			  pinfo->lcdc.v_front_porch +
-			  pinfo->lcdc.v_pulse_width +
-			  pinfo->yres);
+	pixel_total = (pinfo->lcdc.h_back_porch +
+					pinfo->lcdc.h_front_porch +
+					pinfo->lcdc.h_pulse_width +
+					xres) *
+			(pinfo->lcdc.v_back_porch +
+					pinfo->lcdc.v_front_porch +
+					pinfo->lcdc.v_pulse_width +
+					pinfo->yres);
 
-		if (pclk_rate && pixel_total)
-			frame_rate =
+	if (pclk_rate && pixel_total)
+		frame_rate =
 				DIV_ROUND_CLOSEST(pclk_rate, pixel_total);
-		else
-			frame_rate = pinfo->panel_max_fps;
+	else
+		frame_rate = pinfo->panel_max_fps;
 
-		return frame_rate;
+	return frame_rate;
 }
 
 /**
@@ -1371,7 +1373,7 @@ void mdss_panel_dsc_parameters_calc(struct dsc_desc *dsc);
  * @pic_height: Picture height
  */
 void mdss_panel_dsc_update_pic_dim(struct dsc_desc *dsc,
-	int pic_width, int pic_height);
+		int pic_width, int pic_height);
 
 /**
  * mdss_panel_dsc_initial_line_calc: update DSC initial line buffering
@@ -1404,7 +1406,8 @@ void mdss_panel_dsc_pclk_param_calc(struct dsc_desc *dsc, int intf_width);
  * returns length of the PPS buffer.
  */
 int mdss_panel_dsc_prepare_pps_buf(struct dsc_desc *dsc, char *buf,
-	int pps_id);
+		int pps_id);
+
 #ifdef CONFIG_FB_MSM_MDSS
 int mdss_panel_debugfs_init(struct mdss_panel_info *panel_info,
 		char const *panel_name);
@@ -1435,7 +1438,10 @@ struct mdss_panel_timing *mdss_panel_get_timing_by_name(
 #else
 static inline int mdss_panel_debugfs_init(
 		struct mdss_panel_info *panel_info,
-		char const *panel_name) { return 0; };
+		char const *panel_name)
+{
+	return 0;
+};
 static inline void mdss_panel_debugfs_cleanup(
 		struct mdss_panel_info *panel_info) { };
 static inline void mdss_panel_debugfsinfo_to_panelinfo(
@@ -1444,6 +1450,10 @@ static inline void mdss_panel_info_from_timing(struct mdss_panel_timing *pt,
 		struct mdss_panel_info *pinfo) { };
 static inline struct mdss_panel_timing *mdss_panel_get_timing_by_name(
 		struct mdss_panel_data *pdata,
-		const char *name) { return NULL; };
+		const char *name)
+{
+	return NULL;
+};
 #endif
+
 #endif /* MDSS_PANEL_H */
