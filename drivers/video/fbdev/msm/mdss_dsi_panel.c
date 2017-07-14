@@ -1204,6 +1204,7 @@ static int mdss_dsi_panel_on(struct mdss_panel_data *pdata)
 		mdss_dsi_panel_set_acl(ctrl, mdss_dsi_panel_get_acl_mode(ctrl));
 	}
 
+	ctrl->last_color_profile = PROFILE_NONE;
 	mdss_dsi_panel_set_color_profile(ctrl, mdss_dsi_panel_get_color_profile(ctrl));
 
 	if (mdss_dsi_panel_get_night_mode(ctrl)) {
