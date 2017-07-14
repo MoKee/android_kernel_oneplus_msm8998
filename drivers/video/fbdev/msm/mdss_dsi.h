@@ -586,15 +586,15 @@ struct mdss_dsi_ctrl_pdata {
 
 	bool setting_mode_loaded;
 
-	int SRGB_mode;
+	int color_profile;
+	int last_color_profile;
+
 	struct dsi_panel_cmds srgb_on_cmds;
 	struct dsi_panel_cmds srgb_off_cmds;
 
-	int Adobe_RGB_mode;
-	struct dsi_panel_cmds Adobe_RGB_on_cmds;
-	struct dsi_panel_cmds Adobe_RGB_off_cmds;
+	struct dsi_panel_cmds adobe_rgb_on_cmds;
+	struct dsi_panel_cmds adobe_rgb_off_cmds;
 
-	int dci_p3_mode;
 	struct dsi_panel_cmds dci_p3_on_cmds;
 	struct dsi_panel_cmds dci_p3_off_cmds;
 
@@ -755,14 +755,8 @@ int mdss_dsi_panel_get_acl_mode(struct mdss_dsi_ctrl_pdata *ctrl);
 int mdss_dsi_panel_set_hbm_mode(struct mdss_dsi_ctrl_pdata *ctrl, int level);
 int mdss_dsi_panel_get_hbm_mode(struct mdss_dsi_ctrl_pdata *ctrl);
 
-int mdss_dsi_panel_set_srgb_mode(struct mdss_dsi_ctrl_pdata *ctrl, int level);
-int mdss_dsi_panel_get_srgb_mode(struct mdss_dsi_ctrl_pdata *ctrl);
-
-int mdss_dsi_panel_set_adobe_rgb_mode(struct mdss_dsi_ctrl_pdata *ctrl, int level);
-int mdss_dsi_panel_get_adobe_rgb_mode(struct mdss_dsi_ctrl_pdata *ctrl);
-
-int mdss_dsi_panel_set_dci_p3_mode(struct mdss_dsi_ctrl_pdata *ctrl, int level);
-int mdss_dsi_panel_get_dci_p3_mode(struct mdss_dsi_ctrl_pdata *ctrl);
+int mdss_dsi_panel_set_color_profile(struct mdss_dsi_ctrl_pdata *ctrl, int profile);
+int mdss_dsi_panel_get_color_profile(struct mdss_dsi_ctrl_pdata *ctrl);
 
 int mdss_dsi_panel_set_night_mode(struct mdss_dsi_ctrl_pdata *ctrl, int level);
 int mdss_dsi_panel_get_night_mode(struct mdss_dsi_ctrl_pdata *ctrl);
