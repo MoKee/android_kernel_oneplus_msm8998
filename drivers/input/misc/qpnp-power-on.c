@@ -359,7 +359,7 @@ static int qpnp_pon_set_dbc(struct qpnp_pon *pon, u32 delay)
 	int rc = 0;
 	u32 val;
 
-	if (delay == pon->dbc)
+	if (delay == pon->dbc_time_us)
 		goto out;
 
 	if (pon->pon_input)
@@ -387,7 +387,7 @@ static int qpnp_pon_set_dbc(struct qpnp_pon *pon, u32 delay)
 		goto unlock;
 	}
 
-	pon->dbc = delay;
+	pon->dbc_time_us = delay;
 
 unlock:
 	if (pon->pon_input)
@@ -403,27 +403,27 @@ static int qpnp_pon_get_dbc(struct qpnp_pon *pon, u32 *delay)
 
 	rc = regmap_read(pon->regmap, QPNP_PON_DBC_CTL(pon), &val);
 	if (rc) {
-	pr_err("Unable to read pon_dbc_ctl rc=%d\n", rc);
-	return rc;
+		pr_err("Unable to read pon_dbc_ctl rc=%d\n", rc);
+		return rc;
 	}
 	val &= QPNP_PON_DBC_DELAY_MASK(pon);
 
 	if (is_pon_gen2(pon))
-	*delay = USEC_PER_SEC /
-	(1 << (QPNP_PON_GEN2_DELAY_BIT_SHIFT - val));
+		*delay = USEC_PER_SEC /
+			(1 << (QPNP_PON_GEN2_DELAY_BIT_SHIFT - val));
 	else
-	*delay = USEC_PER_SEC /
-	(1 << (QPNP_PON_DELAY_BIT_SHIFT - val));
+		*delay = USEC_PER_SEC /
+			(1 << (QPNP_PON_DELAY_BIT_SHIFT - val));
+
 	return rc;
 }
-//#endif /* VENDOR_EDIT */
 
 static ssize_t qpnp_pon_dbc_show(struct device *dev,
 				struct device_attribute *attr, char *buf)
 {
 	struct qpnp_pon *pon = dev_get_drvdata(dev);
 
-	return snprintf(buf, QPNP_PON_BUFFER_SIZE, "%d\n", pon->dbc);
+	return snprintf(buf, QPNP_PON_BUFFER_SIZE, "%d\n", pon->dbc_time_us);
 }
 
 static ssize_t qpnp_pon_dbc_store(struct device *dev,
@@ -778,7 +778,6 @@ qpnp_pon_input_dispatch(struct qpnp_pon *pon, u32 pon_type)
 	u32 key_status;
 	uint pon_rt_sts;
 	u64 elapsed_us;
-	//#endif /* VENDOR_EDIT */
 
 	cfg = qpnp_get_cfg(pon, pon_type);
 	if (!cfg)
@@ -788,14 +787,14 @@ qpnp_pon_input_dispatch(struct qpnp_pon *pon, u32 pon_type)
 	if (!cfg->key_code)
 		return 0;
 
-	if (pon->kpd_dbc_enable && cfg->pon_type == PON_KPDPWR) {
-		elapsed_us = ktime_us_delta(ktime_get(), pon->kpd_release_time);
-		if (elapsed_us < pon->dbc) {
-		pr_err("Ignoring kpd event - within debounce time\n");
-		return 0;
+	if (pon->kpdpwr_dbc_enable && cfg->pon_type == PON_KPDPWR) {
+		elapsed_us = ktime_us_delta(ktime_get(),
+				pon->kpdpwr_last_release_time);
+		if (elapsed_us < pon->dbc_time_us) {
+			pr_debug("Ignoring kpdpwr event - within debounce time\n");
+			return 0;
 		}
 	}
-	//#endif /* VENDOR_EDIT */
 
 	/* check the RT status to get the current status of the line */
 	rc = regmap_read(pon->regmap, QPNP_PON_RT_STS(pon), &pon_rt_sts);
@@ -833,11 +832,11 @@ qpnp_pon_input_dispatch(struct qpnp_pon *pon, u32 pon_type)
 	pr_debug("PMIC input: code=%d, sts=0x%hhx\n",
 					cfg->key_code, pon_rt_sts);
 	key_status = pon_rt_sts & pon_rt_bit;
-	if (pon->kpd_dbc_enable && cfg->pon_type == PON_KPDPWR) {
+
+	if (pon->kpdpwr_dbc_enable && cfg->pon_type == PON_KPDPWR) {
 		if (!key_status)
-		pon->kpd_release_time = ktime_get();
+			pon->kpdpwr_last_release_time = ktime_get();
 	}
-	//#endif /* VENDOR_EDIT */
 
 	/*
 	 * simulate press event in case release event occurred
@@ -2572,12 +2571,21 @@ static int qpnp_pon_probe(struct platform_device *pdev)
 		}
 	} else {
 		rc = qpnp_pon_set_dbc(pon, delay);
+		if (rc) {
+			dev_err(&pdev->dev,
+				"Unable to set PON debounce delay rc=%d\n", rc);
+			return rc;
+		}
 	}
-	qpnp_pon_get_dbc(pon, &pon->dbc);
+	rc = qpnp_pon_get_dbc(pon, &pon->dbc_time_us);
+	if (rc) {
+		dev_err(&pdev->dev,
+			"Unable to get PON debounce delay rc=%d\n", rc);
+		return rc;
+	}
 
-	pon->kpd_dbc_enable = of_property_read_bool(pon->pdev->dev.of_node,
-	"qcom,kpd-dbc-enable");
-	//#endif /* VENDOR_EDIT */
+	pon->kpdpwr_dbc_enable = of_property_read_bool(pon->pdev->dev.of_node,
+					"qcom,kpdpwr-sw-debounce");
 
 	rc = of_property_read_u32(pon->pdev->dev.of_node,
 				"qcom,warm-reset-poweroff-type",

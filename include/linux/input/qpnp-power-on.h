@@ -28,7 +28,7 @@ struct qpnp_pon {
 	int			pon_power_off_reason;
 	int			num_pon_reg;
 	int			num_pon_config;
-	u32			dbc;
+	u32			dbc_time_us;
 	u32			uvlo;
 	int			warm_reset_poff_type;
 	int			hard_reset_poff_type;
@@ -40,9 +40,8 @@ struct qpnp_pon {
 	u8			warm_reset_reason2;
 	bool		is_spon;
 	bool		store_hard_reset_reason;
-	bool        kpd_dbc_enable;
-	ktime_t     kpd_release_time;
-	//#endif /* VENDOR_EDIT */
+	bool		kpdpwr_dbc_enable;
+	ktime_t		kpdpwr_last_release_time;
 };
 
 /**
