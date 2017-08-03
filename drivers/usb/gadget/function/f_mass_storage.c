@@ -2554,20 +2554,17 @@ reset:
 			usb_ep_disable(fsg->bulk_out);
 			fsg->bulk_out_enabled = 0;
 		}
-		/* neiltsai, 20170331, add qualcomm patch */
-		pr_err("%s:eps are disabled\n", __func__);
-		pr_err("%s:disabled endpoints\n", __func__);
-		/* neiltsai, 20170331, add qualcomm patch */
+
 		common->fsg = NULL;
+
 		/* allow usb LPM after eps are disabled */
 		usb_gadget_autopm_put_async(common->gadget);
 		wake_up(&common->fsg_wait);
 	}
 
 	common->running = 0;
-	if (!new_fsg || rc) {
+	if (!new_fsg || rc)
 		return rc;
-	}
 
 	common->fsg = new_fsg;
 	fsg = common->fsg;
@@ -2609,13 +2606,6 @@ reset:
 		bh->inreq->complete = bulk_in_complete;
 		bh->outreq->complete = bulk_out_complete;
 	}
-	/* neiltsai, 20170331, add qualcomm patch */
-	pr_err("%s:increment pm_usage count num_buffers=%d\n", __func__
-			, common->fsg_num_buffers);
-	/* neiltsai, 20170331, add qualcomm patch */
-
-	/* neiltsai, 20170331, add qualcomm patch */
-	/* neiltsai, 20170331, add qualcomm patch */
 
 	common->running = 1;
 	for (i = 0; i < ARRAY_SIZE(common->luns); ++i)
@@ -2633,17 +2623,9 @@ static int fsg_set_alt(struct usb_function *f, unsigned intf, unsigned alt)
 	struct fsg_dev *fsg = fsg_from_func(f);
 	fsg->common->new_fsg = fsg;
 
-
-	pr_err("%s:increment pm_usage counter\n", __func__);
-	if (!fsg->common || !fsg->common->gadget)
-		pr_err("%s: NULL here\n", __func__);
-
-	/* neiltsai, 20170331, add qualcomm patch */
 	/* prevents usb LPM until thread runs to completion */
 	usb_gadget_autopm_get_async(fsg->common->gadget);
-	/* neiltsai, 20170331, add qualcomm patch */
 
-	pr_err("%s:\n", __func__);
 	raise_exception(fsg->common, FSG_STATE_CONFIG_CHANGE);
 	pr_err("%s: end\n", __func__);
 
