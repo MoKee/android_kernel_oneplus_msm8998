@@ -2439,9 +2439,11 @@ cleanup_label:
 			wma->csr_roam_synch_cb((tpAniSirGlobal)wma->mac_context,
 				roam_synch_ind_ptr, NULL, SIR_ROAMING_ABORT);
 		roam_req = qdf_mem_malloc(sizeof(tSirRoamOffloadScanReq));
-		roam_req->Command = ROAM_SCAN_OFFLOAD_STOP;
-		roam_req->reason = REASON_ROAM_SYNCH_FAILED;
-		wma_process_roaming_config(wma, roam_req);
+		if (roam_req) {
+			roam_req->Command = ROAM_SCAN_OFFLOAD_STOP;
+			roam_req->reason = REASON_ROAM_SYNCH_FAILED;
+			wma_process_roaming_config(wma, roam_req);
+		}
 	}
 	if (roam_synch_ind_ptr && roam_synch_ind_ptr->join_rsp)
 		qdf_mem_free(roam_synch_ind_ptr->join_rsp);
@@ -2449,7 +2451,9 @@ cleanup_label:
 		qdf_mem_free(roam_synch_ind_ptr);
 	if (bss_desc_ptr)
 		qdf_mem_free(bss_desc_ptr);
-	wma->interfaces[synch_event->vdev_id].roam_synch_in_progress = false;
+	if (wma && synch_event)
+		wma->interfaces[synch_event->vdev_id].roam_synch_in_progress =
+			false;
 
 	return status;
 }
@@ -4828,7 +4832,7 @@ QDF_STATUS wma_get_buf_extscan_start_cmd(tp_wma_handle wma_handle,
 QDF_STATUS wma_start_extscan(tp_wma_handle wma,
 			     tSirWifiScanCmdReqParams *pstart)
 {
-	struct wifi_scan_cmd_req_params *params = {0};
+	struct wifi_scan_cmd_req_params *params;
 	int i, j;
 	QDF_STATUS status;
 
@@ -4896,6 +4900,7 @@ QDF_STATUS wma_start_extscan(tp_wma_handle wma,
 
 	status = wmi_unified_start_extscan_cmd(wma->wmi_handle,
 					params);
+	qdf_mem_free(params);
 	if (QDF_IS_STATUS_ERROR(status))
 		return status;
 

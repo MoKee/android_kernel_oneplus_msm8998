@@ -1056,43 +1056,53 @@ static void hdd_vendor_scan_callback(hdd_adapter_t *adapter,
 	}
 
 	cookie = (uintptr_t)req;
-
 	attr = nla_nest_start(skb, QCA_WLAN_VENDOR_ATTR_SCAN_SSIDS);
 	if (!attr)
 		goto nla_put_failure;
 	for (i = 0; i < req->n_ssids; i++) {
-		if (nla_put(skb, i, req->ssids[i].ssid_len, req->ssids[i].ssid))
+		if (nla_put(skb, i, req->ssids[i].ssid_len,
+			req->ssids[i].ssid)) {
+			hdd_err("Failed to add ssid");
 			goto nla_put_failure;
+		}
 	}
 	nla_nest_end(skb, attr);
-
 	attr = nla_nest_start(skb, QCA_WLAN_VENDOR_ATTR_SCAN_FREQUENCIES);
 	if (!attr)
 		goto nla_put_failure;
 	for (i = 0; i < req->n_channels; i++) {
-		if (nla_put_u32(skb, i, req->channels[i]->center_freq))
-			goto nla_put_failure;
+		if (nla_put_u32(skb, i, req->channels[i]->center_freq)) {
+				hdd_err("Failed to add channel");
+				goto nla_put_failure;
+			}
 	}
 	nla_nest_end(skb, attr);
 
 	if (req->ie &&
 		nla_put(skb, QCA_WLAN_VENDOR_ATTR_SCAN_IE, req->ie_len,
-			req->ie))
+			req->ie)) {
+		hdd_err("Failed to add scan ie");
 		goto nla_put_failure;
-
+	}
 	if (req->flags &&
-		nla_put_u32(skb, QCA_WLAN_VENDOR_ATTR_SCAN_FLAGS, req->flags))
+		nla_put_u32(skb, QCA_WLAN_VENDOR_ATTR_SCAN_FLAGS, req->flags)) {
+		hdd_err("Failed to add scan flags");
 		goto nla_put_failure;
-
-	if (hdd_wlan_nla_put_u64(skb, QCA_WLAN_VENDOR_ATTR_SCAN_COOKIE, cookie))
+	}
+	if (hdd_wlan_nla_put_u64(skb,
+				  QCA_WLAN_VENDOR_ATTR_SCAN_COOKIE,
+				  cookie)) {
+		hdd_err("Failed to add scan cookie");
 		goto nla_put_failure;
-
+	}
 	scan_status = (aborted == true) ? VENDOR_SCAN_STATUS_ABORTED :
 		VENDOR_SCAN_STATUS_NEW_RESULTS;
-	if (nla_put_u8(skb, QCA_WLAN_VENDOR_ATTR_SCAN_STATUS, scan_status))
+	if (nla_put_u8(skb, QCA_WLAN_VENDOR_ATTR_SCAN_STATUS, scan_status)) {
+		hdd_err("Failed to add scan staus");
 		goto nla_put_failure;
-
+	}
 	cfg80211_vendor_event(skb, GFP_KERNEL);
+	hdd_info("scan complete event sent to NL");
 	qdf_mem_free(req);
 	return;
 
@@ -1598,6 +1608,19 @@ static int __wlan_hdd_cfg80211_scan(struct wiphy *wiphy,
 		hdd_device_mode_to_string(pAdapter->device_mode),
 		pAdapter->device_mode);
 
+	/*
+	 * IBSS vdev does not have peers on other macs,
+	 * so it does not support scan on other band,
+	 * and IBSS vdev does not need to scan to establish
+	 * IBSS connection. If IBSS vdev need to support scan,
+	 * Firmware need to make the change to add self peer
+	 * per mac for IBSS vdev.
+	 */
+	if (wma_is_hw_dbs_capable() &&
+	   (QDF_IBSS_MODE == pAdapter->device_mode)) {
+		hdd_err("Scan not supported for IBSS in if HW support DBS");
+		return -EINVAL;
+	}
 
 	cfg_param = pHddCtx->config;
 	pScanInfo = &pAdapter->scan_info;
@@ -2394,8 +2417,10 @@ static int __wlan_hdd_cfg80211_vendor_scan(struct wiphy *wiphy,
 		wlan_hdd_copy_bssid(request,
 			nla_data(tb[QCA_WLAN_VENDOR_ATTR_SCAN_BSSID]));
 	}
-	request->no_cck =
-		nla_get_flag(tb[QCA_WLAN_VENDOR_ATTR_SCAN_TX_NO_CCK_RATE]);
+
+	if (tb[QCA_WLAN_VENDOR_ATTR_SCAN_TX_NO_CCK_RATE])
+		request->no_cck =
+		   nla_get_flag(tb[QCA_WLAN_VENDOR_ATTR_SCAN_TX_NO_CCK_RATE]);
 	request->wdev = wdev;
 	request->wiphy = wiphy;
 	request->scan_start = jiffies;

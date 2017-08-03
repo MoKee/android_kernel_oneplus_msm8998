@@ -43,6 +43,8 @@
 #include <net/ieee80211_radiotap.h>
 #include "wlan_hdd_tdls.h"
 #include "wlan_hdd_cfg80211.h"
+#include "wlan_hdd_assoc.h"
+#include "sme_api.h"
 #include "cds_sched.h"
 #include "wma_types.h"
 #include "cds_concurrency.h"
@@ -233,8 +235,10 @@ void wlan_hdd_tdls_disable_offchan_and_teardown_links(hdd_context_t *hddctx)
 
 	connected_tdls_peers = wlan_hdd_tdls_connected_peers(adapter);
 
-	if (!connected_tdls_peers)
-		return ;
+	if (!connected_tdls_peers) {
+		hdd_notice("No TDLS connected peers to delete");
+		return;
+	}
 
 	/* TDLS is not supported in case of concurrency.
 	 * Disable TDLS Offchannel in FW to avoid more
@@ -253,6 +257,9 @@ void wlan_hdd_tdls_disable_offchan_and_teardown_links(hdd_context_t *hddctx)
 			TDLS_SEC_OFFCHAN_OFFSET_40PLUS);
 	hdd_set_tdls_offchannelmode(adapter, DISABLE_CHANSWITCH);
 
+	/* Send Msg to PE for deleting all the TDLS peers */
+	sme_delete_all_tdls_peers(hddctx->hHal, adapter->sessionId);
+
 	for (staidx = 0; staidx < hddctx->max_num_tdls_sta;
 							staidx++) {
 		if (!hddctx->tdlsConnInfo[staidx].staId)
@@ -261,20 +268,35 @@ void wlan_hdd_tdls_disable_offchan_and_teardown_links(hdd_context_t *hddctx)
 		mutex_lock(&hddctx->tdls_lock);
 		curr_peer = wlan_hdd_tdls_find_all_peer(hddctx,
 				hddctx->tdlsConnInfo[staidx].peerMac.bytes);
-
 		if (!curr_peer)
 			continue;
 
 		hdd_notice("indicate TDLS teardown (staId %d)",
 			   curr_peer->staId);
 
+		/* Indicate teardown to supplicant */
 		wlan_hdd_tdls_indicate_teardown(
 					curr_peer->pHddTdlsCtx->pAdapter,
 					curr_peer,
 					eSIR_MAC_TDLS_TEARDOWN_UNSPEC_REASON);
+
+		/*
+		 * Del Sta happened already as part of sme_delete_all_tdls_peers
+		 * Hence clear hdd data structure.
+		 */
+		wlan_hdd_tdls_reset_peer(adapter, curr_peer->peerMac);
 		hdd_send_wlan_tdls_teardown_event(eTDLS_TEARDOWN_CONCURRENCY,
 			curr_peer->peerMac);
 		mutex_unlock(&hddctx->tdls_lock);
+
+		hdd_roam_deregister_tdlssta(adapter,
+			hddctx->tdlsConnInfo[staidx].staId);
+		wlan_hdd_tdls_decrement_peer_count(adapter);
+		hddctx->tdlsConnInfo[staidx].staId = 0;
+		hddctx->tdlsConnInfo[staidx].sessionId = 255;
+
+		qdf_mem_zero(&hddctx->tdlsConnInfo[staidx].peerMac,
+			     sizeof(struct qdf_mac_addr));
 	}
 }
 
@@ -415,12 +437,14 @@ static void wlan_hdd_tdls_discovery_timeout_peer_cb(void *userData)
 	pHddTdlsCtx = (tdlsCtx_t *) userData;
 
 	if ((NULL == pHddTdlsCtx) || (NULL == pHddTdlsCtx->pAdapter)) {
+		mutex_unlock(&pHddCtx->tdls_lock);
 		QDF_TRACE(QDF_MODULE_ID_HDD, QDF_TRACE_LEVEL_ERROR,
 			  FL("pHddTdlsCtx or pAdapter points to NULL"));
 		return;
 	}
 
 	if (WLAN_HDD_ADAPTER_MAGIC != pHddTdlsCtx->pAdapter->magic) {
+		mutex_unlock(&pHddCtx->tdls_lock);
 		hdd_err("pAdapter has invalid magic");
 		return;
 	}
@@ -1913,7 +1937,6 @@ void wlan_hdd_update_tdls_info(hdd_adapter_t *adapter, bool tdls_prohibited,
 	tdlsCtx_t *hdd_tdls_ctx;
 	tdlsInfo_t *tdls_param;
 	QDF_STATUS qdf_ret_status = QDF_STATUS_E_FAILURE;
-	uint16_t staIdx;
 
 	/* If TDLS support is disabled then no need to update target */
 	if (false == hdd_ctx->config->fEnableTDLSSupport) {
@@ -1981,29 +2004,6 @@ void wlan_hdd_update_tdls_info(hdd_adapter_t *adapter, bool tdls_prohibited,
 		hdd_warn("Concurrency not allowed in TDLS! set state cnt %d",
 			hdd_ctx->set_state_info.set_state_cnt);
 		wlan_hdd_tdls_disable_offchan_and_teardown_links(hdd_ctx);
-		if (hdd_ctx->connected_peer_count >= 1) {
-			/* clean up the tdls peers if any */
-			for (staIdx = 0; staIdx < hdd_ctx->max_num_tdls_sta;
-			     staIdx++) {
-				if ((hdd_ctx->tdlsConnInfo[staIdx].sessionId ==
-				     adapter->sessionId)
-				    && (hdd_ctx->tdlsConnInfo[staIdx].staId)) {
-					uint8_t *mac;
-					mac = hdd_ctx->tdlsConnInfo[staIdx].
-						peerMac.bytes;
-					hdd_notice("call sme_delete_tdls_peer_"
-						   "sta staId %d sessionId %d "
-						   MAC_ADDRESS_STR,
-						   hdd_ctx->tdlsConnInfo
-						   [staIdx].staId,
-						   adapter->sessionId,
-						   MAC_ADDR_ARRAY(mac));
-					sme_delete_tdls_peer_sta(
-						WLAN_HDD_GET_HAL_CTX(adapter),
-						adapter->sessionId, mac);
-				}
-			}
-		}
 		tdls_prohibited = true;
 		hdd_ctx->tdls_mode = eTDLS_SUPPORT_NOT_ENABLED;
 		tdls_param->vdev_id = hdd_ctx->set_state_info.vdev_id;
@@ -2359,12 +2359,11 @@ int wlan_hdd_tdls_reset_peer(hdd_adapter_t *pAdapter, const uint8_t *mac)
 		goto ret_status;
 	}
 
-	mutex_lock(&pHddCtx->tdls_lock);
 	curr_peer = wlan_hdd_tdls_get_peer(pAdapter, mac);
 	if (curr_peer == NULL) {
 		hdd_err("curr_peer is NULL");
 		status = -EINVAL;
-		goto rel_lock;
+		goto ret_status;
 	}
 
 	/*
@@ -2387,8 +2386,6 @@ int wlan_hdd_tdls_reset_peer(hdd_adapter_t *pAdapter, const uint8_t *mac)
 					   eTDLS_LINK_IDLE,
 					   eTDLS_LINK_UNSPECIFIED);
 	curr_peer->staId = 0;
-rel_lock:
-	mutex_unlock(&pHddCtx->tdls_lock);
 ret_status:
 	return status;
 }
@@ -2464,11 +2461,25 @@ int wlan_hdd_tdls_get_all_peers(hdd_adapter_t *pAdapter, char *buf, int buflen)
 	hddTdlsPeer_t *curr_peer;
 	tdlsCtx_t *pHddTdlsCtx;
 	hdd_context_t *pHddCtx = WLAN_HDD_GET_CTX(pAdapter);
+	hdd_station_ctx_t *hdd_sta_ctx;
 
 	ENTER();
 
 	if (0 != (wlan_hdd_validate_context(pHddCtx)))
 		return 0;
+
+	if ((QDF_STA_MODE != pAdapter->device_mode)
+	    && (QDF_P2P_CLIENT_MODE != pAdapter->device_mode)) {
+		len = scnprintf(buf, buflen,
+				"\nNo TDLS support for this adapter\n");
+		return len;
+	}
+
+	hdd_sta_ctx = WLAN_HDD_GET_STATION_CTX_PTR(pAdapter);
+	if (eConnectionState_Associated != hdd_sta_ctx->conn_info.connState) {
+		len = scnprintf(buf, buflen, "\nSTA is not associated\n");
+		return len;
+	}
 
 	init_len = buflen;
 	len = scnprintf(buf, buflen, "\n%-18s%-3s%-4s%-3s%-5s\n",
@@ -2574,8 +2585,15 @@ void wlan_hdd_tdls_disconnection_callback(hdd_adapter_t *pAdapter)
 	ENTER();
 
 	pHddCtx = WLAN_HDD_GET_CTX(pAdapter);
-	if (0 != wlan_hdd_validate_context(pHddCtx))
+
+	/*
+	 * Use of wlan_hdd_validate_context is returning failure when
+	 * driver load/unload in progress.so we are directly NULL
+	 * checking context pointer
+	 */
+	if (!pHddCtx)
 		return;
+
 	mutex_lock(&pHddCtx->tdls_lock);
 
 	pHddTdlsCtx = WLAN_HDD_GET_TDLS_CTX_PTR(pAdapter);
@@ -3845,7 +3863,7 @@ int wlan_hdd_tdls_add_station(struct wiphy *wiphy,
 		hdd_err(MAC_ADDRESS_STR " update %d not exist. return invalid",
 			MAC_ADDR_ARRAY(mac), update);
 		ret = -EINVAL;
-		goto rel_lock;
+		goto ret_status;
 	}
 
 	link_status = pTdlsPeer->link_status;

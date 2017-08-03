@@ -466,7 +466,7 @@ static uint16_t __lim_get_sme_join_req_size_for_alloc(uint8_t *pBuf)
 
 	pBuf += sizeof(uint16_t);
 	len = lim_get_u16(pBuf);
-	return len + sizeof(uint16_t);
+	return len;
 }
 
 /**
@@ -558,6 +558,7 @@ static bool __lim_process_sme_sys_ready_ind(tpAniSirGlobal pMac, uint32_t *pMsgB
 		ready_req->pe_roam_synch_cb = pe_roam_synch_callback;
 		pe_register_callbacks_with_wma(pMac, ready_req);
 		pMac->lim.add_bssdescr_callback = ready_req->add_bssdescr_cb;
+		pMac->lim.sme_msg_callback = ready_req->sme_msg_cb;
 	}
 	PELOGW(lim_log(pMac, LOGW, FL("sending WMA_SYS_READY_IND msg to HAL"));)
 	MTRACE(mac_trace_msg_tx(pMac, NO_SESSION, msg.type));
@@ -3684,6 +3685,9 @@ static void __lim_process_sme_addts_req(tpAniSirGlobal pMac, uint32_t *pMsgBuf)
 						 &sessionId);
 	if (psessionEntry == NULL) {
 		lim_log(pMac, LOGE, "Session Does not exist for given bssId");
+		lim_send_sme_addts_rsp(pMac, pSirAddts->rspReqd, eSIR_FAILURE,
+				       NULL, pSirAddts->req.tspec,
+				       smesessionId, smetransactionId);
 		return;
 	}
 #ifdef FEATURE_WLAN_DIAG_SUPPORT_LIM    /* FEATURE_WLAN_DIAG_SUPPORT */
@@ -4154,6 +4158,7 @@ static void __lim_process_roam_scan_offload_req(tpAniSirGlobal mac_ctx,
 	if (!local_ie_buf) {
 		lim_log(mac_ctx, LOGE,
 			FL("Mem Alloc failed for local_ie_buf"));
+		qdf_mem_free(req_buffer);
 		return;
 	}
 

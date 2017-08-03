@@ -208,7 +208,7 @@ static int hdd_lro_desc_find(struct hdd_lro_s *lro_info,
 		 &free_pool->lro_free_list_head,
 		 struct hdd_lro_desc_entry, lro_node);
 	if (NULL == entry) {
-		hdd_err("Could not allocate LRO desc!");
+		hdd_debug("Could not allocate LRO desc!");
 		return -ENOMEM;
 	}
 
@@ -284,7 +284,7 @@ static bool hdd_lro_eligible(struct hdd_lro_s *lro_info, struct sk_buff *skb,
 		return false;
 
 	if (0 != hdd_lro_desc_find(lro_info, skb, iph, tcph, desc)) {
-		hdd_err("finding the LRO desc failed");
+		hdd_debug("finding the LRO desc failed");
 		return false;
 	}
 
@@ -532,8 +532,6 @@ int hdd_lro_enable(hdd_context_t *hdd_ctx, hdd_adapter_t *adapter)
 		return 0;
 	}
 
-	/* Register the flush callback */
-	ol_register_lro_flush_cb(hdd_lro_flush, hdd_init_lro_mgr);
 	adapter->dev->features |= NETIF_F_LRO;
 
 	if (hdd_ctx->config->enable_tcp_delack) {
@@ -544,6 +542,17 @@ int hdd_lro_enable(hdd_context_t *hdd_ctx, hdd_adapter_t *adapter)
 	hdd_info("LRO Enabled");
 
 	return 0;
+}
+
+/**
+ * hdd_lro_create() - Allocate LRO managers via callbacks
+ *
+ * Return: none
+ */
+void hdd_lro_create(void)
+{
+	/* Register the flush callback */
+	ol_register_lro_flush_cb(hdd_lro_flush, hdd_init_lro_mgr);
 }
 
 static void hdd_deinit_lro_mgr(void *lro_info)
@@ -570,6 +579,15 @@ void hdd_lro_disable(hdd_context_t *hdd_ctx, hdd_adapter_t *adapter)
 		 QDF_STA_MODE != adapter->device_mode)
 		return;
 
+}
+
+/**
+ * hdd_lro_destroy() - Free LRO managers via callbacks
+ *
+ * Return: none
+ */
+void hdd_lro_destroy(void)
+{
 	/* Deregister the flush callback */
 	ol_deregister_lro_flush_cb(hdd_deinit_lro_mgr);
 
@@ -593,7 +611,8 @@ enum hdd_lro_rx_status hdd_lro_rx(hdd_context_t *hdd_ctx,
 	enum hdd_lro_rx_status status = HDD_LRO_NO_RX;
 
 	if (((adapter->dev->features & NETIF_F_LRO) != NETIF_F_LRO) ||
-			qdf_atomic_read(&hdd_ctx->disable_lro_in_concurrency))
+			qdf_atomic_read(&hdd_ctx->disable_lro_in_concurrency) ||
+			QDF_NBUF_CB_RX_PEER_CACHED_FRM(skb))
 		return status;
 
 	if (QDF_NBUF_CB_RX_TCP_PROTO(skb)) {
