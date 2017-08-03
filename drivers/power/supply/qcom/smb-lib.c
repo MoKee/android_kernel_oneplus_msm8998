@@ -607,13 +607,13 @@ static const struct apsd_result *smblib_update_usb_type(struct smb_charger *chg)
 	/* if PD is active, APSD is disabled so won't have a valid result */
 	if (chg->pd_active)
 		chg->usb_psy_desc.type = POWER_SUPPLY_TYPE_USB_PD;
-	if(chg->dash_on)
+	if (chg->dash_on)
 		chg->usb_psy_desc.type = POWER_SUPPLY_TYPE_DASH;
 	else
 		chg->usb_psy_desc.type = apsd_result->pst;
+
 	smblib_dbg(chg, PR_MISC, "APSD=%s PD=%d\n",
 					apsd_result->name, chg->pd_active);
-
 	return apsd_result;
 }
 
@@ -798,7 +798,9 @@ int smblib_rerun_apsd_if_required(struct smb_charger *chg)
 			smblib_err(chg, "Couldn't enable dpdm regulator rc=%d\n",
 				rc);
 	}
+
 	smblib_rerun_apsd(chg);
+
 	return 0;
 }
 
@@ -1822,6 +1824,23 @@ int smblib_get_prop_batt_charge_done(struct smb_charger *chg,
 	return 0;
 }
 
+int smblib_get_prop_charge_qnovo_enable(struct smb_charger *chg,
+				  union power_supply_propval *val)
+{
+	int rc;
+	u8 stat;
+
+	rc = smblib_read(chg, QNOVO_PT_ENABLE_CMD_REG, &stat);
+	if (rc < 0) {
+		smblib_err(chg, "Couldn't read QNOVO_PT_ENABLE_CMD rc=%d\n",
+			rc);
+		return rc;
+	}
+
+	val->intval = (bool)(stat & QNOVO_PT_ENABLE_CMD_BIT);
+	return 0;
+}
+
 /***********************
  * BATTERY PSY SETTERS *
  ***********************/
@@ -1974,6 +1993,22 @@ int smblib_set_prop_system_temp_level(struct smb_charger *chg,
 	vote(chg->fcc_votable, THERMAL_DAEMON_VOTER, true,
 			chg->thermal_mitigation[chg->system_temp_level]);
 	return 0;
+}
+
+int smblib_set_prop_charge_qnovo_enable(struct smb_charger *chg,
+				  const union power_supply_propval *val)
+{
+	int rc = 0;
+
+	rc = smblib_masked_write(chg, QNOVO_PT_ENABLE_CMD_REG,
+			QNOVO_PT_ENABLE_CMD_BIT,
+			val->intval ? QNOVO_PT_ENABLE_CMD_BIT : 0);
+	if (rc < 0) {
+		dev_err(chg->dev, "Couldn't enable qnovo rc=%d\n", rc);
+		return rc;
+	}
+
+	return rc;
 }
 
 int smblib_rerun_aicl(struct smb_charger *chg)
@@ -3939,9 +3974,10 @@ static void smblib_handle_typec_removal(struct smb_charger *chg)
 
 	/* enable APSD CC trigger for next insertion */
 	rc = smblib_masked_write(chg, TYPE_C_CFG_REG,
-		APSD_START_ON_CC_BIT, APSD_START_ON_CC_BIT);
+				APSD_START_ON_CC_BIT, APSD_START_ON_CC_BIT);
 	if (rc < 0)
 		smblib_err(chg, "Couldn't enable APSD_START_ON_CC rc=%d\n", rc);
+
 	if (chg->wa_flags & QC_AUTH_INTERRUPT_WA_BIT) {
 		/* re-enable AUTH_IRQ_EN_CFG_BIT */
 		rc = smblib_masked_write(chg,
@@ -3985,11 +4021,12 @@ static void smblib_handle_typec_insertion(struct smb_charger *chg,
 
 	chg->usb_present = 1;
 	vote(chg->pd_disallowed_votable_indirect, CC_DETACHED_VOTER, false, 0);
+
 	/* disable APSD CC trigger since CC is attached */
 	rc = smblib_masked_write(chg, TYPE_C_CFG_REG, APSD_START_ON_CC_BIT, 0);
 	if (rc < 0)
 		smblib_err(chg, "Couldn't disable APSD_START_ON_CC rc=%d\n",
-		rc);
+									rc);
 
 	if (sink_attached) {
 		typec_sink_insertion(chg);

@@ -399,7 +399,6 @@ int mdss_dsi_panel_reset(struct mdss_panel_data *pdata, int enable)
 					gpio_set_value(
 						(ctrl_pdata->bklt_en_gpio), 1);
 				}
-
 				if (rc) {
 					pr_err("%s: unable to set dir for bklt gpio\n",
 						__func__);

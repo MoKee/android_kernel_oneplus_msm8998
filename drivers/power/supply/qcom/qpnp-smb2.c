@@ -1005,7 +1005,9 @@ static enum power_supply_property smb2_batt_props[] = {
 	POWER_SUPPLY_PROP_INPUT_CURRENT_LIMITED,
 	POWER_SUPPLY_PROP_VOLTAGE_NOW,
 	POWER_SUPPLY_PROP_VOLTAGE_MAX,
+	POWER_SUPPLY_PROP_VOLTAGE_QNOVO,
 	POWER_SUPPLY_PROP_CURRENT_NOW,
+	POWER_SUPPLY_PROP_CURRENT_QNOVO,
 	POWER_SUPPLY_PROP_CONSTANT_CHARGE_CURRENT_MAX,
 	POWER_SUPPLY_PROP_TEMP,
 	POWER_SUPPLY_PROP_TECHNOLOGY,
@@ -1102,6 +1104,9 @@ static int smb2_batt_get_prop(struct power_supply *psy,
 		break;
 	case POWER_SUPPLY_PROP_VOLTAGE_MAX:
 		val->intval = get_client_vote(chg->fv_votable, DEFAULT_VOTER);
+		break;
+	case POWER_SUPPLY_PROP_CHARGE_QNOVO_ENABLE:
+		rc = smblib_get_prop_charge_qnovo_enable(chg, val);
 		break;
 	case POWER_SUPPLY_PROP_VOLTAGE_QNOVO:
 		val->intval = chg->qnovo_fv_uv;
@@ -1227,6 +1232,9 @@ static int smb2_batt_set_prop(struct power_supply *psy,
 		break;
 	case POWER_SUPPLY_PROP_VOLTAGE_MAX:
 		vote(chg->fv_votable, DEFAULT_VOTER, true, val->intval);
+		break;
+	case POWER_SUPPLY_PROP_CHARGE_QNOVO_ENABLE:
+		rc = smblib_set_prop_charge_qnovo_enable(chg, val);
 		break;
 	case POWER_SUPPLY_PROP_VOLTAGE_QNOVO:
 		chg->qnovo_fv_uv = val->intval;

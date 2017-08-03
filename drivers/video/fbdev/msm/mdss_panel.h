@@ -430,7 +430,6 @@ struct lcd_panel_info {
 	u32 v_polarity;
 };
 
-
 /* DSI PHY configuration */
 struct mdss_dsi_phy_ctrl {
 	char regulator[7];	/* 8996, 1 * 5 */

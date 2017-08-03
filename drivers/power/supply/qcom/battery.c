@@ -715,7 +715,6 @@ static void handle_settled_icl_change(struct pl_data *chip)
 
 	if (chip->pl_mode == POWER_SUPPLY_PL_USBIN_USBIN
 			|| chip->pl_mode == POWER_SUPPLY_PL_USBIN_USBIN_EXT) {
-
 		/*
 		 * call aicl split only when USBIN_USBIN and enabled
 		 * and if aicl changed
