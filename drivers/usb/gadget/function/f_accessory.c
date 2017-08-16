@@ -879,6 +879,11 @@ int acc_ctrlrequest(struct usb_composite_dev *cdev,
 	u16	w_length = le16_to_cpu(ctrl->wLength);
 	unsigned long flags;
 
+#ifdef CONFIG_VENDOR_ONEPLUS
+	if (dev == NULL)
+		goto err;
+#endif
+
 	/*
 	 * If instance is not created which is the case in power off charging
 	 * mode, dev will be NULL. Hence return error if it is the case.
