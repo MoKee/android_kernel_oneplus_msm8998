@@ -772,6 +772,71 @@ static int mdss_dsi_panel_apply_display_setting(struct mdss_panel_data *pdata,
 	return 0;
 }
 
+int mdss_dsi_panel_set_color_profile(struct mdss_dsi_ctrl_pdata *ctrl, int profile)
+{
+	struct dsi_panel_cmds *cmds = NULL;
+
+	mutex_lock(&ctrl->panel_mode_lock);
+
+	if (!ctrl->is_panel_on) {
+		goto end;
+	}
+
+	if (ctrl->last_color_profile == profile) {
+		goto end;
+	}
+
+	if (profile == PROFILE_NONE) {
+		switch (ctrl -> last_color_profile) {
+			case PROFILE_SRGB:
+				cmds = &ctrl->srgb_off_cmds;
+				break;
+			case PROFILE_ADOBE_RGB:
+				// noop, deprecated
+				break;
+			case PROFILE_DCI_P3:
+				cmds = &ctrl->dci_p3_off_cmds;
+				break;
+		}
+	} else {
+		switch (profile) {
+			case PROFILE_SRGB:
+				cmds = &ctrl->srgb_on_cmds;
+				break;
+			case PROFILE_ADOBE_RGB:
+				// noop, deprecated
+				break;
+			case PROFILE_DCI_P3:
+				cmds = &ctrl->dci_p3_on_cmds;
+				break;
+		}
+	}
+
+	if (cmds == NULL) {
+		pr_err("Nothing to do.\n");
+		goto end;
+	}
+
+	if (!cmds->cmd_cnt) {
+		pr_err("The panel does not support mode: %d\n", profile);
+		goto end;
+	}
+
+	mdss_dsi_panel_cmds_send(ctrl, cmds, CMD_REQ_COMMIT);
+	pr_err("Panel switched to mode: %d\n", profile);
+
+	ctrl->last_color_profile = profile;
+
+end:
+	mutex_unlock(&ctrl->panel_mode_lock);
+	return 0;
+}
+
+int mdss_dsi_panel_get_color_profile(struct mdss_dsi_ctrl_pdata *ctrl)
+{
+	return ctrl->color_profile;
+}
+
 static void mdss_dsi_panel_switch_mode(struct mdss_panel_data *pdata,
 							int mode)
 {
@@ -938,6 +1003,13 @@ static int mdss_dsi_panel_on(struct mdss_panel_data *pdata)
 	if (ctrl->ds_registered)
 		mdss_dba_utils_video_on(pinfo->dba_data, pinfo);
 
+	mutex_lock(&ctrl->panel_mode_lock);
+	ctrl->is_panel_on = true;
+	mutex_unlock(&ctrl->panel_mode_lock);
+
+	ctrl->last_color_profile = PROFILE_NONE;
+	mdss_dsi_panel_set_color_profile(ctrl, mdss_dsi_panel_get_color_profile(ctrl));
+
 	/* Ensure low persistence mode is set as before */
 	mdss_dsi_panel_apply_display_setting(pdata, pinfo->persist_mode);
 
@@ -1005,6 +1077,10 @@ static int mdss_dsi_panel_off(struct mdss_panel_data *pdata)
 		if (ctrl->ndx != DSI_CTRL_LEFT)
 			goto end;
 	}
+
+	mutex_lock(&ctrl->panel_mode_lock);
+	ctrl->is_panel_on = false;
+	mutex_unlock(&ctrl->panel_mode_lock);
 
 	if (ctrl->off_cmds.cmd_cnt)
 		mdss_dsi_panel_cmds_send(ctrl, &ctrl->off_cmds, CMD_REQ_COMMIT);
@@ -2938,6 +3014,20 @@ static int mdss_panel_parse_dt(struct device_node *np,
 	pinfo->panel_type = (!rc ? tmp : 0);
 #endif
 
+	mdss_dsi_parse_dcs_cmds(np, &ctrl_pdata->srgb_on_cmds,
+		"qcom,mdss-dsi-panel-srgb-on-command",
+		"qcom,mdss-dsi-srgb-command-state");
+	mdss_dsi_parse_dcs_cmds(np, &ctrl_pdata->srgb_off_cmds,
+		"qcom,mdss-dsi-panel-srgb-off-command",
+		"qcom,mdss-dsi-srgb-command-state");
+
+	mdss_dsi_parse_dcs_cmds(np, &ctrl_pdata->dci_p3_on_cmds,
+		"qcom,mdss-dsi-panel-dci-p3-on-command",
+		"qcom,mdss-dsi-dci-p3-command-state");
+	mdss_dsi_parse_dcs_cmds(np, &ctrl_pdata->dci_p3_off_cmds,
+		"qcom,mdss-dsi-panel-dci-p3-off-command",
+		"qcom,mdss-dsi-dci-p3-command-state");
+
 	return 0;
 
 error:
@@ -2988,6 +3078,8 @@ int mdss_dsi_panel_init(struct device_node *node,
 	ctrl_pdata->panel_data.apply_display_setting =
 			mdss_dsi_panel_apply_display_setting;
 	ctrl_pdata->switch_mode = mdss_dsi_panel_switch_mode;
+
+	mutex_init(&ctrl_pdata->panel_mode_lock);
 
 	return 0;
 }
