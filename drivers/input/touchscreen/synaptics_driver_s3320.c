@@ -1410,10 +1410,6 @@ static void gesture_judge(struct synaptics_ts_data *ts)
 #endif
 /***************end****************/
 
-#ifdef REPORT_2D_PRESSURE
-static unsigned char pres_value = 1;
-#endif
-
 #ifdef SUPPORT_VIRTUAL_KEY //WayneChang, 2015/12/02, add for key to abs, simulate key in abs through virtual key system
 //extern struct completion key_cm;
 bool key_back_pressed = 0;
@@ -1450,29 +1446,7 @@ void int_touch(void)
 	points.status = 0;
 
 	mutex_lock(&ts->mutexreport);
-#ifdef REPORT_2D_PRESSURE
 
-	if (ts->support_ft) {
-		ret = i2c_smbus_write_byte_data(ts->client, 0xff, 0x4);
-		ret = synaptics_rmi4_i2c_read_block(ts->client, 0x19, \
-		                                    sizeof(points.pressure), &points.pressure);
-
-		if (ret < 0) {
-			TPD_ERR("synaptics_int_touch: i2c_transfer failed\n");
-			goto INT_TOUCH_END;
-		}
-
-		if (0 == points.pressure) { //workaround for have no pressure value input reader into hover mode
-			pres_value++;
-
-			if (255 == pres_value)
-				pres_value = 1;
-		} else {
-			pres_value = points.pressure;
-		}
-	}
-
-#endif
 	ret = i2c_smbus_write_byte_data(ts->client, 0xff, 0x0);
 
 	if (version_is_s3508)
@@ -1590,13 +1564,9 @@ void int_touch(void)
 			input_report_abs(ts->input_dev, ABS_MT_TOUCH_MINOR, min(points.raw_x, points.raw_y));
 			//#endif
 #ifdef REPORT_2D_PRESSURE
-
-			if (ts->support_ft) {
-				input_report_abs(ts->input_dev, ABS_MT_PRESSURE, pres_value);
-				TPD_DEBUG("%s: pressure%d[%d]\n", __func__, i, pres_value);
-			}
-
+			input_report_abs(ts->input_dev, ABS_MT_PRESSURE, points.z);
 #endif
+
 #ifndef TYPE_B_PROTOCOL
 			input_mt_sync(ts->input_dev);
 #endif
