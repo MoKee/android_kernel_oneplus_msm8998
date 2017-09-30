@@ -474,6 +474,7 @@ struct synaptics_ts_data {
 	uint32_t max_x;
 	uint32_t max_y;
 	uint32_t max_y_real;
+	uint32_t max_touch_width;
 	uint32_t btn_state;
 	uint32_t pre_finger_state;
 	uint32_t pre_btn_state;
@@ -2876,8 +2877,8 @@ static int	synaptics_input_init(struct synaptics_ts_data *ts)
 	set_bit(KEY_BUTTON_LEFT, ts->input_dev->keybit);
 	set_bit(KEY_BUTTON_RIGHT, ts->input_dev->keybit);
 	/* For multi touch */
-	input_set_abs_params(ts->input_dev, ABS_MT_TOUCH_MAJOR, 0, 255, 0, 0);
-	input_set_abs_params(ts->input_dev, ABS_MT_TOUCH_MINOR, 0, 255, 0, 0);
+	input_set_abs_params(ts->input_dev, ABS_MT_TOUCH_MAJOR, 0, ts->max_touch_width, 0, 0);
+	input_set_abs_params(ts->input_dev, ABS_MT_TOUCH_MINOR, 0, ts->max_touch_width, 0, 0);
 	input_set_abs_params(ts->input_dev, ABS_MT_POSITION_X,
 	0, (ts->max_x-1), 0, 0);
 	input_set_abs_params(ts->input_dev, ABS_MT_POSITION_Y,
@@ -3915,10 +3916,12 @@ static int checkFlashState(struct i2c_client *client)
 static int synaptics_fw_check(struct synaptics_ts_data *ts)
 {
 	int ret;
-	uint8_t buf[4];
+	uint8_t buf[14]; /* struct synaptics_rmi4_f12_ctrl_8 */
 	uint32_t bootloader_mode;
 	int max_y_ic = 0;
 	int max_x_ic = 0;
+	int num_of_rx = 0;
+	int num_of_tx = 0;
 
 	if (!ts) {
 		TPD_ERR("%s ts is NULL\n", __func__);
@@ -3945,9 +3948,12 @@ static int synaptics_fw_check(struct synaptics_ts_data *ts)
 		}
 	}
 
-	i2c_smbus_read_i2c_block_data(ts->client, F12_2D_CTRL08, 4, buf);
+	i2c_smbus_read_i2c_block_data(ts->client, F12_2D_CTRL08, 14, buf);
 	max_x_ic = ((buf[1]<<8)&0xffff) | (buf[0] & 0xffff);
 	max_y_ic = ((buf[3]<<8)&0xffff) | (buf[2] & 0xffff);
+	num_of_rx = buf[12];
+	num_of_tx = buf[13];
+	ts->max_touch_width = max(num_of_rx, num_of_tx);
 
 	TPD_ERR("max_x = %d,max_y = %d; max_x_ic = %d,max_y_ic = %d\n",
 	ts->max_x, ts->max_y, max_x_ic, max_y_ic);
