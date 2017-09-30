@@ -1414,9 +1414,9 @@ void int_touch(void)
 	for (i = 0; i < count_data; i++) {
 		points.status = buf[i*8];
 		points.x = ((buf[i*8+2]&0x0f)<<8) | (buf[i*8+1] & 0xff);
-		points.raw_x = buf[i*8+6] & 0x0f;
+		points.raw_x = buf[i*8+6];
 		points.y = ((buf[i*8+4]&0x0f)<<8) | (buf[i*8+3] & 0xff);
-		points.raw_y = buf[i*8+7] & 0x0f;
+		points.raw_y = buf[i*8+7];
 		points.z = buf[i*8+5];
 		finger_info <<= 1;
 		finger_status =  points.status & 0x03;
