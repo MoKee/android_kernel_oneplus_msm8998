@@ -156,6 +156,13 @@ static bool sleep_disabled;
 module_param_named(sleep_disabled,
 	sleep_disabled, bool, S_IRUGO | S_IWUSR | S_IWGRP);
 
+#ifdef CONFIG_VENDOR_ONEPLUS
+void msm_cpuidle_set_sleep_disable(bool disable)
+{
+	sleep_disabled = disable;
+}
+#endif
+
 s32 msm_cpuidle_get_deep_idle_latency(void)
 {
 	return 10;
@@ -1151,6 +1158,8 @@ static int cluster_configure(struct lpm_cluster *cluster, int idx,
 		struct cpumask nextcpu, *cpumask;
 		uint64_t us;
 		uint32_t pred_us;
+		uint64_t sec;
+		uint64_t nsec;
 
 		us = get_cluster_sleep_time(cluster, &nextcpu,
 						from_idle, &pred_us);
@@ -1162,11 +1171,20 @@ static int cluster_configure(struct lpm_cluster *cluster, int idx,
 			goto failed_set_mode;
 		}
 
-		us = (us + 1) * 1000;
 		clear_predict_history();
 		clear_cl_predict_history();
 
-		do_div(us, NSEC_PER_SEC/SCLK_HZ);
+		us = us + 1;
+		sec = us;
+		do_div(sec, USEC_PER_SEC);
+		nsec = us - sec * USEC_PER_SEC;
+
+		sec = sec * SCLK_HZ;
+		if (nsec > 0) {
+			nsec = nsec * NSEC_PER_USEC;
+			do_div(nsec, NSEC_PER_SEC/SCLK_HZ);
+		}
+		us = sec + nsec;
 		msm_mpm_enter_sleep(us, from_idle, cpumask);
 	}
 
