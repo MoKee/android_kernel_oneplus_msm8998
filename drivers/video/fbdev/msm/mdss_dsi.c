@@ -2842,13 +2842,6 @@ static int mdss_dsi_event_handler(struct mdss_panel_data *pdata,
 	case MDSS_EVENT_AVR_MODE:
 		mdss_dsi_avr_config(ctrl_pdata, (int)(unsigned long) arg);
 		break;
-	case MDSS_EVENT_PANEL_SET_COLOR_PROFILE:
-		ctrl_pdata->color_profile = (int)(unsigned long) arg;
-		mdss_dsi_panel_set_color_profile(ctrl_pdata, (int)(unsigned long) ctrl_pdata->color_profile);
-		break;
-	case MDSS_EVENT_PANEL_GET_COLOR_PROFILE:
-		rc = mdss_dsi_panel_get_color_profile(ctrl_pdata);
-		break;
 	default:
 		pr_debug("%s: unhandled event=%d\n", __func__, event);
 		break;

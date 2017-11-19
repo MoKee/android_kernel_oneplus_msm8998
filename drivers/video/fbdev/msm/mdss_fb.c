@@ -913,41 +913,6 @@ static ssize_t mdss_fb_idle_pc_notify(struct device *dev,
 	return scnprintf(buf, PAGE_SIZE, "idle power collapsed\n");
 }
 
-static ssize_t mdss_fb_get_color_profile(struct device *dev,
-		struct device_attribute *attr, char *buf)
-{
-	struct fb_info *fbi = dev_get_drvdata(dev);
-	struct msm_fb_data_type *mfd = fbi->par;
-	int ret = 0;
-	int profile = 0;
-
-	profile = mdss_fb_send_panel_event(mfd, MDSS_EVENT_PANEL_GET_COLOR_PROFILE,
-			NULL);
-	ret = scnprintf(buf, PAGE_SIZE, "%d\n", profile);
-	return ret;
-}
-
-static ssize_t mdss_fb_set_color_profile(struct device *dev,
-		struct device_attribute *attr, const char *buf, size_t count)
-{
-	struct fb_info *fbi = dev_get_drvdata(dev);
-	struct msm_fb_data_type *mfd = fbi->par;
-	int rc = 0;
-	int profile = 0;
-
-	rc = kstrtoint(buf, 10, &profile);
-	if (rc) {
-		pr_err("kstrtoint failed. rc=%d\n", rc);
-		return rc;
-	}
-	rc = mdss_fb_send_panel_event(mfd, MDSS_EVENT_PANEL_SET_COLOR_PROFILE,
-			(void *)(unsigned long)profile);
-	if (rc)
-		pr_err("Fail to set color profile: %d\n", profile);
-
-	return count;
-}
-
 static DEVICE_ATTR(msm_fb_type, S_IRUGO, mdss_fb_get_type, NULL);
 static DEVICE_ATTR(msm_fb_split, S_IRUGO | S_IWUSR, mdss_fb_show_split,
 					mdss_fb_store_split);
@@ -969,8 +934,6 @@ static DEVICE_ATTR(measured_fps, S_IRUGO | S_IWUSR | S_IWGRP,
 static DEVICE_ATTR(msm_fb_persist_mode, S_IRUGO | S_IWUSR,
 	mdss_fb_get_persist_mode, mdss_fb_change_persist_mode);
 static DEVICE_ATTR(idle_power_collapse, S_IRUGO, mdss_fb_idle_pc_notify, NULL);
-static DEVICE_ATTR(color_profile, S_IRUGO | S_IWUSR,
-	mdss_fb_get_color_profile, mdss_fb_set_color_profile);
 
 static struct attribute *mdss_fb_attrs[] = {
 	&dev_attr_msm_fb_type.attr,
@@ -986,7 +949,6 @@ static struct attribute *mdss_fb_attrs[] = {
 	&dev_attr_measured_fps.attr,
 	&dev_attr_msm_fb_persist_mode.attr,
 	&dev_attr_idle_power_collapse.attr,
-	&dev_attr_color_profile.attr,
 	NULL,
 };
 

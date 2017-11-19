@@ -127,13 +127,6 @@ enum {
 	MODE_GPIO_LOW,
 };
 
-enum {
-	PROFILE_NONE = 0,
-	PROFILE_SRGB,
-	PROFILE_ADOBE_RGB, // deprecated
-	PROFILE_DCI_P3,
-};
-
 /*
  * enum sim_panel_modes - Different panel modes for simulator panels
  *
@@ -316,8 +309,6 @@ enum mdss_intf_events {
 	MDSS_EVENT_AVR_MODE,
 	MDSS_EVENT_REGISTER_CLAMP_HANDLER,
 	MDSS_EVENT_MAX,
-	MDSS_EVENT_PANEL_SET_COLOR_PROFILE,
-	MDSS_EVENT_PANEL_GET_COLOR_PROFILE,
 };
 
 /**

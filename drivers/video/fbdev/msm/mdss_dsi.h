@@ -588,17 +588,6 @@ struct mdss_dsi_ctrl_pdata {
 	bool update_phy_timing; /* flag to recalculate PHY timings */
 
 	bool phy_power_off;
-
-	struct mutex panel_mode_lock;
-
-	int color_profile;
-	int last_color_profile;
-
-	struct dsi_panel_cmds srgb_on_cmds;
-	struct dsi_panel_cmds srgb_off_cmds;
-
-	struct dsi_panel_cmds dci_p3_on_cmds;
-	struct dsi_panel_cmds dci_p3_off_cmds;
 };
 
 struct dsi_status_data {
@@ -721,9 +710,6 @@ int mdss_dsi_phy_pll_reset_status(struct mdss_dsi_ctrl_pdata *ctrl);
 int mdss_dsi_check_panel_status(struct mdss_dsi_ctrl_pdata *ctrl, void *arg);
 
 void mdss_dsi_debug_bus_init(struct mdss_dsi_data *sdata);
-
-int mdss_dsi_panel_set_color_profile(struct mdss_dsi_ctrl_pdata *ctrl, int profile);
-int mdss_dsi_panel_get_color_profile(struct mdss_dsi_ctrl_pdata *ctrl);
 
 static inline const char *__mdss_dsi_pm_name(enum dsi_pm_type module)
 {
