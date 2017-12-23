@@ -521,8 +521,6 @@ void op_charge_info_init(struct smb_charger *chg);
 int update_dash_unplug_status(void);
 int get_prop_batt_status(struct smb_charger *chg);
 int get_prop_chg_protect_status(struct smb_charger *chg);
-int op_set_prop_otg_switch(struct smb_charger *chg,
-				const union power_supply_propval *val);
 int check_allow_switch_dash(struct smb_charger *chg,
 				const union power_supply_propval *val);
 int smblib_set_prop_chg_voltage(struct smb_charger *chg,
