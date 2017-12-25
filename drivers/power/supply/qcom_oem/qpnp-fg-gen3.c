@@ -2894,9 +2894,8 @@ static int fg_psy_get_property(struct power_supply *psy,
 	switch (psp) {
 	case POWER_SUPPLY_PROP_CAPACITY:
 /* david.liu@bsp, 20160926 Add dash charging */
-		if(!get_extern_fg_regist_done())
-			pval->intval = get_prop_pre_shutdown_soc();
-		else if (chip->use_external_fg && external_fg
+		if (get_extern_fg_regist_done()
+				&& chip->use_external_fg && external_fg
 				&& external_fg->get_battery_soc)
 			pval->intval = external_fg->get_battery_soc();
 		else
