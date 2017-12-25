@@ -1,7 +1,5 @@
 #ifndef	__OEM_EXTERNAL_FG_H__
 #define __OEM_EXTERNAL_FG_H__
-#include <linux/regmap.h>
-#include <linux/input/qpnp-power-on.h>
 enum {
 	ADAPTER_FW_UPDATE_NONE,
 	ADAPTER_FW_NEED_UPDATE,
@@ -90,7 +88,6 @@ enum batt_status_type {
 	BATT_STATUS_INVALID,
 };
 
-void op_pm8998_regmap_register(struct qpnp_pon *pon);
 void regsister_notify_usb_enumeration_status(struct notify_usb_enumeration_status *event);
 void notify_dash_unplug_register(struct notify_dash_event *event);
 void notify_dash_unplug_unregister(struct notify_dash_event *event);
@@ -102,7 +99,6 @@ void bq27541_information_register(struct external_battery_gauge *fast_chg);
 void bq27541_information_unregister(struct external_battery_gauge *fast_chg);
 bool get_extern_fg_regist_done(void);
 bool get_extern_bq_present(void);
-int get_prop_pre_shutdown_soc(void);
 
 /*add for dash adapter update*/
 extern bool dash_adapter_update_is_tx_gpio(unsigned long gpio_num);
