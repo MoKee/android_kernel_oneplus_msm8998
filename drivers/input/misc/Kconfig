@@ -837,6 +837,7 @@ config TRI_STATE_KEY
 	tristate "switch Profiles by this triple key"
 
 source "drivers/input/misc/fingerprint_detect/Kconfig"
+source "drivers/input/misc/goodixfingerprint/Kconfig"
 
 config FINGERPRINT_FPC1022
 	default y
