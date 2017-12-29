@@ -454,6 +454,7 @@ struct synaptics_ts_data {
 	int reset_gpio;
 	int v1p8_gpio;
 	int support_hw_poweroff;
+	int support_1080x2160_tp;
 	int enable2v8_gpio;
 	int max_num;
 	int enable_remote;
@@ -2484,10 +2485,18 @@ TEST_WITH_CBC_s3508:
 	ret = i2c_smbus_write_byte_data(ts->client, F54_ANALOG_COMMAND_BASE, 0x01);//get report
 	checkCMD();
 	tx_datal = i2c_smbus_read_i2c_block_data(ts->client, F54_ANALOG_DATA_BASE + 3, 7, buffer);
-	buffer[0] |= 0x10; //no care 4 31 32 40 50 51 52chanel
-	buffer[3] |= 0x80;
-	buffer[5] |= 0x01;
-	buffer[6] |= 0xc0;
+	if (ts->support_1080x2160_tp) {
+		buffer[0] |= 0x20;/*no care 5 31 32 34 36 37 40 52 53chanel*/
+		buffer[3] |= 0x80;
+		buffer[4] |= 0x35;
+		buffer[5] |= 0x01;
+		buffer[6] |= 0xc0;
+	} else {
+		buffer[0] |= 0x10;/*no care 4 31 32 40 50 51 52chanel*/
+		buffer[3] |= 0x80;
+		buffer[5] |= 0x01;
+		buffer[6] |= 0xc0;
+	}
 
 	for (x = 0; x < 7; x++) {
 		if (0xff != buffer[x]) {
@@ -3310,10 +3319,15 @@ static ssize_t touch_press_status_read(struct file *file, char __user *user_buf,
 
 	TPD_ERR("%s", __func__);
 
-	for (x = 0; x < TX_NUMBER; x++) {
-		for (y = 0; y < RX_NUMBER; y++) {
-			if (x > (TX_NUMBER - 1) || y < (RX_NUMBER - 12)) //exclude the key tx and upper part
-				continue;
+	for (x = 0; x < TX_NUM; x++) {
+		for (y = 0; y < RX_NUM; y++) {
+			if (ts_g->support_1080x2160_tp) {
+				if (x > (TX_NUM-1) || y > (RX_NUM - 15))
+					continue;
+			} else {
+				if (x > (TX_NUM-1) || y < (RX_NUM - 12))
+					continue;
+			}
 
 			if ((delta[x][y] < -30) && (delta[x][y] > -250)) {
 				//str_n += sprintf(&page[str_n],"x%d,y%d = %4d\n", x, y, delta[x][y]);
@@ -3385,10 +3399,16 @@ static ssize_t limit_enable_write(struct file *file, const char __user *buffer, 
 	char buf[8] = {0};
 	int limit_mode = 0;
 
-	if (version_is_s3508)
-		F51_CUSTOM_CTRL74 = 0x0437;
-	else
+	if (version_is_s3508) {
+		if (ts_g->support_1080x2160_tp)
+			F51_CUSTOM_CTRL74 = 0x0438;
+		else if (TP_FW > 0xeb101014)
+			F51_CUSTOM_CTRL74 = 0x0435;
+		else
+			F51_CUSTOM_CTRL74 = 0x0437;
+	} else {
 		F51_CUSTOM_CTRL74 = 0x044D;
+	}
 
 	if (count > 2)
 		count = 2;
@@ -4090,7 +4110,9 @@ static void synaptics_tpedge_limitfunc(void)
 	int ret;
 
 	if (version_is_s3508) {
-		if (TP_FW > 0xeb101014)
+		if (ts_g->support_1080x2160_tp)
+			F51_CUSTOM_CTRL74 = 0x0438;
+		else if (TP_FW > 0xeb101014)
 			F51_CUSTOM_CTRL74 = 0x0435;
 		else
 			F51_CUSTOM_CTRL74 = 0x0437;
@@ -4188,6 +4210,11 @@ static int synaptics_parse_dts(struct device *dev, struct synaptics_ts_data *ts)
 	if (ts->v1p8_gpio < 0) {
 		TPD_DEBUG("ts->1v8-gpio  not specified\n");
 	}
+
+	if (of_property_read_bool(np, "oem,support_1080x2160_tp"))
+		ts->support_1080x2160_tp = true;
+	else
+		ts->support_1080x2160_tp = false;
 
 	if (of_property_read_bool(np, "oem,support_hw_poweroff"))
 		ts->support_hw_poweroff = true;
@@ -4567,7 +4594,12 @@ static int synaptics_ts_probe(struct i2c_client *client, const struct i2c_device
 		strcpy(ts->fw_name, "tp/fw_synaptics_15801b.img");
 		version_is_s3508 = 0;
 	} else {
-		strcpy(ts->fw_name, "tp/fw_synaptics_16859.img");
+		if (ts->support_1080x2160_tp)
+			strlcpy(ts->fw_name, "tp/fw_synaptics_17801.img",
+				sizeof(ts->fw_name));
+		else
+			strlcpy(ts->fw_name, "tp/fw_synaptics_16859.img",
+				sizeof(ts->fw_name));
 		version_is_s3508 = 1;
 	}
 
