@@ -55,6 +55,8 @@
 
 #include <linux/project_info.h>
 
+#include "fingerprint_detect/fingerprint_detect.h"
+
 static unsigned int ignor_home_for_ESD = 0;
 module_param(ignor_home_for_ESD, uint, S_IRUGO | S_IWUSR);
 
@@ -83,13 +85,8 @@ struct fpc1020_data {
 	struct pinctrl_state   *gpio_state_suspend;
 
 #ifdef ONEPLUS_EDIT
-	int EN_VDD_gpio;
-	int id0_gpio;
-	int id1_gpio;
-	int id2_gpio;
 	struct input_dev	*input_dev;
 	int screen_state;//1: on 0:off
-	int sensor_version;//0x01:fpc1245 0x02:fpc1263
 #endif
 
 #if defined(CONFIG_FB)
@@ -296,8 +293,7 @@ static ssize_t sensor_version_get(struct device* device,
 				 struct device_attribute* attribute,
 				 char* buffer)
 {
-	struct fpc1020_data* fpc1020 = dev_get_drvdata(device);
-	return scnprintf(buffer, PAGE_SIZE, "%i\n", fpc1020->sensor_version);
+	return scnprintf(buffer, PAGE_SIZE, "%i\n", fp_version);
 }
 
 static DEVICE_ATTR(sensor_version, S_IRUSR, sensor_version_get, NULL);
@@ -464,12 +460,18 @@ static int fpc1020_probe(struct platform_device *pdev)
 	struct device *dev = &pdev->dev;
 	int rc = 0;
 	unsigned long irqf;
-	int id0, id1, id2;
 
-	struct device_node *np = dev->of_node;
 	struct proc_dir_entry *procdir;
 
-	struct fpc1020_data *fpc1020 = devm_kzalloc(dev, sizeof(*fpc1020),
+	struct device_node *np;
+	struct fpc1020_data *fpc1020;
+
+	pr_info("%s: fp version %x\n", __func__, fp_version);
+	if ((fp_version != 0x01) && (fp_version != 0x02))
+		return 0;
+
+	np = dev->of_node;
+	fpc1020 = devm_kzalloc(dev, sizeof(*fpc1020),
 			GFP_KERNEL);
 	if (!fpc1020) {
 		dev_err(dev,
@@ -504,28 +506,7 @@ static int fpc1020_probe(struct platform_device *pdev)
 		goto exit;
 	}
 
-#ifdef ONEPLUS_EDIT
-	rc = fpc1020_request_named_gpio(fpc1020, "fpc,gpio_id0",
-			&fpc1020->id0_gpio);
-	if (gpio_is_valid(fpc1020->id0_gpio)) {
-		dev_err(dev, "%s: gpio_is_valid(fpc1020->id0_gpio=%d)\n", __func__, fpc1020->id0_gpio);
-		gpio_direction_input(fpc1020->id0_gpio);
-	}
-
-	rc = fpc1020_request_named_gpio(fpc1020, "fpc,gpio_id1",
-			&fpc1020->id1_gpio);
-	if (gpio_is_valid(fpc1020->id1_gpio)) {
-		dev_err(dev, "%s: gpio_is_valid(fpc1020->id1_gpio=%d)\n", __func__, fpc1020->id1_gpio);
-		gpio_direction_input(fpc1020->id1_gpio);
-	}
-
-	rc = fpc1020_request_named_gpio(fpc1020, "fpc,gpio_id2",
-			&fpc1020->id2_gpio);
-	if (gpio_is_valid(fpc1020->id2_gpio)) {
-		dev_err(dev, "%s: gpio_is_valid(fpc1020->id2_gpio=%d)\n", __func__, fpc1020->id2_gpio);
-		gpio_direction_input(fpc1020->id2_gpio);
-	}
-#else
+#ifndef ONEPLUS_EDIT
 	rc = fpc1020_pinctrl_init(fpc1020);
 	if (rc)
 		goto exit;
@@ -573,49 +554,6 @@ static int fpc1020_probe(struct platform_device *pdev)
 	if (rc) {
 		dev_err(dev, "could not create sysfs\n");
 		goto exit;
-	}
-
-	/**
-	*           ID0(GPIO39)   ID1(GPIO41)   ID1(GPIO63)
-	*   fpc1245
-	*   O-film   1            1             1
-	*   Primax   1            0             0
-	*   truly    0            0             1
-	*
-	*   fpc1263
-	*   O-film   1            1             0
-	*   Primax   0            0             0
-	*   truly    0            1             1
-	*fingerchip/
-	*   qtech    0            1             0
-	*   Goodix   1            0             1
-	*
-	*/
-	fpc1020->sensor_version = 0x02;
-	id0 = gpio_get_value(fpc1020->id0_gpio);
-	id1 = gpio_get_value(fpc1020->id1_gpio);
-	id2 = gpio_get_value(fpc1020->id2_gpio);
-	if (id0 && id1 && id2) {
-		push_component_info(FINGERPRINTS, "fpc1245", "FPC(OF)");
-		fpc1020->sensor_version = 0x01;
-	} else if (id0 && !id1 && !id2) {
-		push_component_info(FINGERPRINTS, "fpc1245", "FPC(Primax)");
-		fpc1020->sensor_version = 0x01;
-	} else if (!id0 && !id1 && id2) {
-		push_component_info(FINGERPRINTS, "fpc1245", "FPC(truly)");
-		fpc1020->sensor_version = 0x01;
-	} else if (id0 && id1 && !id2) {
-		push_component_info(FINGERPRINTS, "fpc1263", "FPC(OF)");
-	} else if (!id0 && !id1 && !id2) {
-		push_component_info(FINGERPRINTS, "fpc1263", "FPC(Primax)");
-	} else if (!id0 && id1 && id2) {
-		push_component_info(FINGERPRINTS, "fpc1263", "FPC(truly)");
-	} else if (!id0 && id1 && !id2) {
-		push_component_info(FINGERPRINTS, "fpc1263", "FPC(f/p)");
-	} else if (id0 && !id1 && id2) {
-		push_component_info(FINGERPRINTS, "fpc1263", "FPC(Goodix)");
-	} else {
-		push_component_info(FINGERPRINTS, "fpc", "PC");
 	}
 
 	// init procfs
