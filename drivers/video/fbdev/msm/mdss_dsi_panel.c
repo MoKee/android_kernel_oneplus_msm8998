@@ -808,6 +808,15 @@ int mdss_dsi_panel_set_color_profile(struct mdss_dsi_ctrl_pdata *ctrl, int profi
 			case PROFILE_DCI_P3:
 				cmds = &ctrl->dci_p3_off_cmds;
 				break;
+			case PROFILE_NIGHT:
+				cmds = &ctrl->night_mode_off_cmds;
+				break;
+			case PROFILE_ONEPLUS:
+				cmds = &ctrl->oneplus_mode_off_cmds;
+				break;
+			case PROFILE_ADAPTION:
+				cmds = &ctrl->adaption_mode_off_cmds;
+				break;
 		}
 	} else {
 		switch (profile) {
@@ -819,6 +828,15 @@ int mdss_dsi_panel_set_color_profile(struct mdss_dsi_ctrl_pdata *ctrl, int profi
 				break;
 			case PROFILE_DCI_P3:
 				cmds = &ctrl->dci_p3_on_cmds;
+				break;
+			case PROFILE_NIGHT:
+				cmds = &ctrl->night_mode_on_cmds;
+				break;
+			case PROFILE_ONEPLUS:
+				cmds = &ctrl->oneplus_mode_on_cmds;
+				break;
+			case PROFILE_ADAPTION:
+				cmds = &ctrl->adaption_mode_on_cmds;
 				break;
 		}
 	}
@@ -3065,6 +3083,27 @@ static int mdss_panel_parse_dt(struct device_node *np,
 	mdss_dsi_parse_dcs_cmds(np, &ctrl_pdata->dci_p3_off_cmds,
 		"qcom,mdss-dsi-panel-dci-p3-off-command",
 		"qcom,mdss-dsi-dci-p3-command-state");
+
+	mdss_dsi_parse_dcs_cmds(np, &ctrl_pdata->night_mode_on_cmds,
+		"qcom,mdss-dsi-panel-night-mode-on-command",
+		"qcom,mdss-dsi-night-mode-command-state");
+	mdss_dsi_parse_dcs_cmds(np, &ctrl_pdata->night_mode_off_cmds,
+		"qcom,mdss-dsi-panel-night-mode-off-command",
+		"qcom,mdss-dsi-night-mode-command-state");
+
+	mdss_dsi_parse_dcs_cmds(np, &ctrl_pdata->oneplus_mode_on_cmds,
+		"qcom,mdss-dsi-panel-oneplus-mode-on-command",
+		"qcom,mdss-dsi-oneplus-mode-command-state");
+	mdss_dsi_parse_dcs_cmds(np, &ctrl_pdata->oneplus_mode_off_cmds,
+		"qcom,mdss-dsi-panel-oneplus-mode-off-command",
+		"qcom,mdss-dsi-oneplus-mode-command-state");
+
+	mdss_dsi_parse_dcs_cmds(np, &ctrl_pdata->adaption_mode_on_cmds,
+		"qcom,mdss-dsi-panel-adaption-mode-on-command",
+		"qcom,mdss-dsi-adaption-mode-command-state");
+	mdss_dsi_parse_dcs_cmds(np, &ctrl_pdata->adaption_mode_off_cmds,
+		"qcom,mdss-dsi-panel-adaption-mode-off-command",
+		"qcom,mdss-dsi-adaption-mode-command-state");
 
 	return 0;
 
