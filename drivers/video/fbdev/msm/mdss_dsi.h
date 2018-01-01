@@ -604,6 +604,15 @@ struct mdss_dsi_ctrl_pdata {
 
 	struct dsi_panel_cmds dci_p3_on_cmds;
 	struct dsi_panel_cmds dci_p3_off_cmds;
+
+	struct dsi_panel_cmds night_mode_on_cmds;
+	struct dsi_panel_cmds night_mode_off_cmds;
+
+	struct dsi_panel_cmds oneplus_mode_on_cmds;
+	struct dsi_panel_cmds oneplus_mode_off_cmds;
+
+	struct dsi_panel_cmds adaption_mode_on_cmds;
+	struct dsi_panel_cmds adaption_mode_off_cmds;
 };
 
 struct dsi_status_data {
