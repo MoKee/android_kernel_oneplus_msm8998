@@ -114,9 +114,9 @@ static int fingerprint_detect_probe(struct platform_device *pdev)
 		goto exit;
 	}
 	if (of_property_read_bool(fp_detect->dev->of_node, "oem,dumpling"))
-		fp_detect->project_version = 0x02;
+		fp_detect->project_version = PROJECT_DUMPLING;
 	else
-		fp_detect->project_version = 0x01;
+		fp_detect->project_version = PROJECT_CHEESEBURGER;
 
 	rc = fp_pinctrl_init(fp_detect);
 	if (rc)
@@ -167,48 +167,49 @@ static int fingerprint_detect_probe(struct platform_device *pdev)
 	id1 = gpio_get_value(fp_detect->id1_gpio);
 	id2 = gpio_get_value(fp_detect->id2_gpio);
 	if (id0 && id1 && id2) {
-		if (0x02 == fp_detect->project_version)
+		if (fp_detect->project_version == PROJECT_DUMPLING)
 			push_component_info(FINGERPRINTS, "fpc1022", "FPC(OF)");
 		else
 			push_component_info(FINGERPRINTS, "fpc1245", "FPC(OF)");
-		fp_detect->sensor_version = 0x01;
+		fp_detect->sensor_version = SENSOR_FPC_1;
 	} else if (id0 && !id1 && !id2) {
 		push_component_info(FINGERPRINTS, "fpc1245", "FPC(Primax)");
-		fp_detect->sensor_version = 0x01;
+		fp_detect->sensor_version = SENSOR_FPC_1;
 	} else if (!id0 && !id1 && id2) {
 		push_component_info(FINGERPRINTS, "fpc1245", "FPC(truly)");
-		fp_detect->sensor_version = 0x01;
+		fp_detect->sensor_version = SENSOR_FPC_1;
 	} else if (id0 && id1 && !id2) {
-		if (0x02 == fp_detect->project_version) {
+		if (fp_detect->project_version == PROJECT_DUMPLING) {
 			push_component_info(FINGERPRINTS, "goodix3268", "goodix");
-			fp_detect->sensor_version = 0x03;
+			fp_detect->sensor_version = SENSOR_GOODIX;
 		} else {
 			push_component_info(FINGERPRINTS, "fpc1263", "FPC(OF)");
-			fp_detect->sensor_version = 0x02;
+			fp_detect->sensor_version = SENSOR_FPC_2;
 		}
 	} else if (!id0 && !id1 && !id2) {
 		push_component_info(FINGERPRINTS, "fpc1263", "FPC(Primax)");
-		fp_detect->sensor_version = 0x02;
+		fp_detect->sensor_version = SENSOR_FPC_2;
 	} else if (!id0 && id1 && id2) {
-		if (0x02 == fp_detect->project_version) {
+		if (fp_detect->project_version == PROJECT_DUMPLING) {
 			push_component_info(FINGERPRINTS, "gfp5288", "Goodix");
-			fp_detect->sensor_version = 0x03;
+			fp_detect->sensor_version = SENSOR_GOODIX;
 		} else {
 			push_component_info(FINGERPRINTS, "fpc1263", "FPC(truly)");
-			fp_detect->sensor_version = 0x02;
+			fp_detect->sensor_version = SENSOR_FPC_2;
 		}
 	} else if (!id0 && id1 && !id2) {
 		push_component_info(FINGERPRINTS, "fpc1263", "FPC(f/p)");
-		fp_detect->sensor_version = 0x02;
+		fp_detect->sensor_version = SENSOR_FPC_2;
 	} else if (id0 && !id1 && id2) {
 		push_component_info(FINGERPRINTS, "gfp5288", "Goodix");
-		fp_detect->sensor_version = 0x03;
+		fp_detect->sensor_version = SENSOR_GOODIX;
 	} else {
 		push_component_info(FINGERPRINTS, "fpc", "PC");
 	}
 
 	fp_version = fp_detect->sensor_version;
-	dev_info(dev, "%s: ok\n", __func__);
+	dev_info(dev, "%s: ok, project=%d, sensor=%d\n", __func__,
+		fp_detect->project_version, fp_detect->sensor_version);
 exit:
 	return rc;
 }
