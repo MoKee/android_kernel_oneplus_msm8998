@@ -77,6 +77,10 @@ const DECLARE_TLV_DB_LINEAR(msm_compr_vol_gain, 0,
 
 #define MAX_NUMBER_OF_STREAMS 2
 
+#ifdef CONFIG_VENDOR_ONEPLUS
+int gis_24bits = 0;
+#endif
+
 struct msm_compr_gapless_state {
 	bool set_next_stream_id;
 	int32_t stream_opened[MAX_NUMBER_OF_STREAMS];
@@ -1085,6 +1089,13 @@ static int msm_compr_configure_dsp_for_playback
 		return -EINVAL;
 	}
 
+#ifdef CONFIG_VENDOR_ONEPLUS
+	if (prtd->codec_param.codec.bit_rate == 24) {
+		bits_per_sample = 24;
+		gis_24bits = 1;
+	}
+#endif
+
 	if ((prtd->codec_param.codec.format == SNDRV_PCM_FORMAT_S24_LE) ||
 		(prtd->codec_param.codec.format == SNDRV_PCM_FORMAT_S24_3LE))
 		bits_per_sample = 24;
@@ -1889,6 +1900,12 @@ static int msm_compr_trigger(struct snd_compr_stream *cstream, int cmd)
 	int stream_id;
 	uint32_t stream_index;
 	uint16_t bits_per_sample = 16;
+
+#ifdef CONFIG_VENDOR_ONEPLUS
+	if (prtd->codec_param.codec.bit_rate == 24) {
+		bits_per_sample = 24;
+	}
+#endif
 
 	spin_lock_irqsave(&prtd->lock, flags);
 	if (atomic_read(&prtd->error)) {
