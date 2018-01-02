@@ -850,7 +850,7 @@ static int __init gf_init(void)
 	 * the driver which manages those device numbers.
 	 */
 	pr_info("%s:fp version %x\n", __func__, fp_version);
-	if(0x03 != fp_version)
+	if (fp_version != SENSOR_GOODIX)
 		return 0;
 	BUILD_BUG_ON(N_SPI_MINORS > 256);
 	status = register_chrdev(SPIDEV_MAJOR, CHRD_DRIVER_NAME, &gf_fops);

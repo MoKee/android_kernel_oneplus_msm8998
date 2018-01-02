@@ -85,10 +85,6 @@ struct fpc1020_data {
 	struct pinctrl_state   *gpio_state_suspend;
 
 #ifdef ONEPLUS_EDIT
-	int EN_VDD_gpio;
-	int id0_gpio;
-	int id1_gpio;
-	int id2_gpio;
 	struct input_dev	*input_dev;
 	int screen_state;//1: on 0:off
 	int project_version;
@@ -462,7 +458,7 @@ static int fpc1020_probe(struct platform_device *pdev)
 	struct fpc1020_data *fpc1020;
 
 	pr_info("%s: fp version %x\n", __func__, fp_version);
-	if ((fp_version != 0x01) && (fp_version != 0x02))
+	if ((fp_version != SENSOR_FPC_1) && (fp_version != SENSOR_FPC_2))
 		return 0;
 
 	np = dev->of_node;
@@ -489,9 +485,9 @@ static int fpc1020_probe(struct platform_device *pdev)
 	}
 
 	if (of_property_read_bool(fpc1020->dev->of_node, "oem,dumpling"))
-		fpc1020->project_version = 0x02;
+		fpc1020->project_version = PROJECT_DUMPLING;
 	else
-		fpc1020->project_version = 0x01;
+		fpc1020->project_version = PROJECT_CHEESEBURGER;
 
 	rc = fpc1020_request_named_gpio(fpc1020, "fpc,irq-gpio",
 			&fpc1020->irq_gpio);
@@ -506,28 +502,7 @@ static int fpc1020_probe(struct platform_device *pdev)
 		goto exit;
 	}
 
-#ifdef ONEPLUS_EDIT
-	rc = fpc1020_request_named_gpio(fpc1020, "fpc,gpio_id0",
-			&fpc1020->id0_gpio);
-	if (gpio_is_valid(fpc1020->id0_gpio)) {
-		dev_err(dev, "%s: gpio_is_valid(fpc1020->id0_gpio=%d)\n", __func__, fpc1020->id0_gpio);
-		gpio_direction_input(fpc1020->id0_gpio);
-	}
-
-	rc = fpc1020_request_named_gpio(fpc1020, "fpc,gpio_id1",
-			&fpc1020->id1_gpio);
-	if (gpio_is_valid(fpc1020->id1_gpio)) {
-		dev_err(dev, "%s: gpio_is_valid(fpc1020->id1_gpio=%d)\n", __func__, fpc1020->id1_gpio);
-		gpio_direction_input(fpc1020->id1_gpio);
-	}
-
-	rc = fpc1020_request_named_gpio(fpc1020, "fpc,gpio_id2",
-			&fpc1020->id2_gpio);
-	if (gpio_is_valid(fpc1020->id2_gpio)) {
-		dev_err(dev, "%s: gpio_is_valid(fpc1020->id2_gpio=%d)\n", __func__, fpc1020->id2_gpio);
-		gpio_direction_input(fpc1020->id2_gpio);
-	}
-#else
+#ifndef ONEPLUS_EDIT
 	rc = fpc1020_pinctrl_init(fpc1020);
 	if (rc)
 		goto exit;
