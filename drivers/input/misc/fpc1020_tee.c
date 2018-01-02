@@ -462,7 +462,7 @@ static int fpc1020_probe(struct platform_device *pdev)
 	struct fpc1020_data *fpc1020;
 
 	pr_info("%s: fp version %x\n", __func__, fp_version);
-	if ((fp_version != 0x01) && (fp_version != 0x02))
+	if ((fp_version != SENSOR_FPC_1) && (fp_version != SENSOR_FPC_2))
 		return 0;
 
 	np = dev->of_node;
@@ -489,9 +489,9 @@ static int fpc1020_probe(struct platform_device *pdev)
 	}
 
 	if (of_property_read_bool(fpc1020->dev->of_node, "oem,dumpling"))
-		fpc1020->project_version = 0x02;
+		fpc1020->project_version = PROJECT_DUMPLING;
 	else
-		fpc1020->project_version = 0x01;
+		fpc1020->project_version = PROJECT_CHEESEBURGER;
 
 	rc = fpc1020_request_named_gpio(fpc1020, "fpc,irq-gpio",
 			&fpc1020->irq_gpio);
