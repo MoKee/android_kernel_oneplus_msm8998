@@ -467,7 +467,7 @@ static int fpc1020_probe(struct platform_device *pdev)
 	struct fpc1020_data *fpc1020;
 
 	pr_info("%s: fp version %x\n", __func__, fp_version);
-	if ((fp_version != 0x01) && (fp_version != 0x02))
+	if ((fp_version != SENSOR_FPC_1) && (fp_version != SENSOR_FPC_2))
 		return 0;
 
 	np = dev->of_node;
