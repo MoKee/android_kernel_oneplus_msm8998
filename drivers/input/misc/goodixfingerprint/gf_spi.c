@@ -66,6 +66,8 @@
 #define	CHRD_DRIVER_NAME	"goodix_fp_spi"
 #define	CLASS_NAME		    "goodix_fp"
 
+#define KEY_FINGERPRINT 0x2ee
+
 #define N_SPI_MINORS		32	/* ... up to 256 */
 static int SPIDEV_MAJOR;
 
@@ -88,6 +90,7 @@ struct gf_key_map maps[] = {
 	{ EV_KEY, GF_NAV_INPUT_LONG_PRESS },
 	{ EV_KEY, GF_NAV_INPUT_F2},
 #endif
+	{ EV_KEY, KEY_FINGERPRINT },
 };
 
 static void gf_enable_irq(struct gf_dev *gf_dev)
@@ -489,17 +492,25 @@ static long gf_compat_ioctl(struct file *filp, unsigned int cmd, unsigned long a
 
 static irqreturn_t gf_irq(int irq, void *handle)
 {
-#if defined(GF_NETLINK_ENABLE)
-	char temp = GF_NET_EVENT_IRQ;
-
-	wake_lock_timeout(&fp_wakelock, msecs_to_jiffies(WAKELOCK_HOLD_TIME));
-	sendnlmsg(&temp);
-#elif defined GF_FASYNC
 	struct gf_dev *gf_dev = &gf;
 
+#if defined(GF_NETLINK_ENABLE)
+	char temp = GF_NET_EVENT_IRQ;
+	sendnlmsg(&temp);
+#elif defined GF_FASYNC
 	if (gf_dev->async)
 		kill_fasync(&gf_dev->async, SIGIO, POLL_IN);
 #endif
+
+	if (gf_dev->fb_black) {
+		wake_lock_timeout(&fp_wakelock, msecs_to_jiffies(WAKELOCK_HOLD_TIME));
+
+		/* Report button input to trigger CPU boost */
+		input_report_key(gf_dev->input, KEY_FINGERPRINT, 1);
+		input_sync(gf_dev->input);
+		input_report_key(gf_dev->input, KEY_FINGERPRINT, 0);
+		input_sync(gf_dev->input);
+	}
 
 	return IRQ_HANDLED;
 }
