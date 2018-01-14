@@ -287,30 +287,32 @@ static void nav_event_input(struct gf_dev *gf_dev, gf_nav_event_t nav_event)
 		pr_debug("%s nav right\n", __func__);
 		break;
 
-	case GF_NAV_CLICK:
+	/*case GF_NAV_CLICK:
 		nav_input = GF_NAV_INPUT_CLICK;
 		pr_debug("%s nav click\n", __func__);
-		break;
+		break;*/
 
-	case GF_NAV_HEAVY:
+	/*case GF_NAV_HEAVY:
 		nav_input = GF_NAV_INPUT_HEAVY;
 		pr_debug("%s nav heavy\n", __func__);
-		break;
+		break;*/
 
 	case GF_NAV_LONG_PRESS:
 		nav_input = GF_NAV_INPUT_LONG_PRESS;
 		pr_debug("%s nav long press\n", __func__);
 		break;
 
-	case GF_NAV_DOUBLE_CLICK:
+	/*case GF_NAV_DOUBLE_CLICK:
 		nav_input = GF_NAV_INPUT_DOUBLE_CLICK;
 		pr_debug("%s nav double click\n", __func__);
-		break;
+		break;*/
+
 /*liuyan 2017/8/7 add for reprot f2*/
-	case GF_NAV_F2:
+	/*case GF_NAV_F2:
 		nav_input = GF_NAV_INPUT_F2;
 		pr_debug("%s nav f2\n", __func__);
-		break;
+		break;*/
+
 	default:
 		pr_warn("%s unknown nav event: %d\n", __func__, nav_event);
 		break;
