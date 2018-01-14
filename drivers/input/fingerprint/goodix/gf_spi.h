@@ -64,6 +64,12 @@ typedef enum gf_key_event {
 	GF_KEY_CAMERA,
 } gf_key_event_t;
 
+typedef enum gf_nav_mode {
+	GF_MODE_NONE = 0,
+	GF_MODE_GESTURE,
+	GF_MODE_BUTTON,
+} gf_nav_mode_t;
+
 struct gf_key {
 	enum gf_key_event key;
 	uint32_t value;   /* key down = 1, key up = 0 */
@@ -147,6 +153,7 @@ struct gf_dev {
 	signed enable_gpio;
 	int project_version;
 	bool disabled;
+	int nav_mode;
 };
 /*liuyan 2017/7/28 add*/
 int gf_pinctrl_init(struct gf_dev* gf_dev);

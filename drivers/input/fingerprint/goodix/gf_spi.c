@@ -92,6 +92,7 @@ struct gf_key_map maps[] = {
 	{ EV_KEY, GF_NAV_INPUT_RIGHT },
 	{ EV_KEY, GF_NAV_INPUT_LEFT },
 	{ EV_KEY, GF_NAV_INPUT_LONG_PRESS },
+	{ EV_KEY, GF_KEY_INPUT_CAMERA },
 /*liuyan 2017/8/4, add*/
 	{ EV_KEY, GF_NAV_INPUT_F2},
 #endif
@@ -256,15 +257,28 @@ static int gfspi_ioctl_clk_uninit(struct gf_dev *data)
 
 static void nav_event_input(struct gf_dev *gf_dev, gf_nav_event_t nav_event)
 {
+	int nav_mode = gf_dev->nav_mode;
 	uint32_t nav_input = 0;
+
+	if (nav_mode == GF_MODE_NONE) {
+		return;
+	}
 
 	switch (nav_event) {
 	case GF_NAV_FINGER_DOWN:
 		pr_debug("%s nav finger down\n", __func__);
+		if (nav_mode == GF_MODE_BUTTON) {
+			input_report_key(gf_dev->input, GF_KEY_INPUT_CAMERA, 1);
+			input_sync(gf_dev->input);
+		}
 		break;
 
 	case GF_NAV_FINGER_UP:
 		pr_debug("%s nav finger up\n", __func__);
+		if (nav_mode == GF_MODE_BUTTON) {
+			input_report_key(gf_dev->input, GF_KEY_INPUT_CAMERA, 0);
+			input_sync(gf_dev->input);
+		}
 		break;
 
 	case GF_NAV_DOWN:
@@ -318,7 +332,7 @@ static void nav_event_input(struct gf_dev *gf_dev, gf_nav_event_t nav_event)
 		break;
 	}
 
-	if ((nav_event != GF_NAV_FINGER_DOWN) && (nav_event != GF_NAV_FINGER_UP)) {
+	if (nav_mode == GF_MODE_GESTURE && nav_input != 0) {
 		input_report_key(gf_dev->input, nav_input, 1);
 		input_sync(gf_dev->input);
 		input_report_key(gf_dev->input, nav_input, 0);
@@ -708,6 +722,46 @@ static const struct file_operations proc_disable = {
 	.owner = THIS_MODULE,
 };
 
+static ssize_t set_nav_mode(struct file *file,
+		const char __user *buf, size_t count, loff_t *lo)
+{
+	struct gf_dev *gf_dev = &gf;
+	char page[10] = {0};
+	int rc, val;
+
+	rc = copy_from_user(page, buf, count);
+	if (rc) {
+		return -EINVAL;
+	}
+
+	sscanf(page, "%d", &val);
+	if (val < GF_MODE_NONE || val > GF_MODE_BUTTON) {
+		return -EINVAL;
+	}
+
+	gf_dev->nav_mode = val;
+
+	return count;
+}
+
+static ssize_t get_nav_mode(struct file *file,
+		char __user *buf, size_t count, loff_t *lo)
+{
+	struct gf_dev *gf_dev = &gf;
+	char page[10];
+
+	sprintf(page, "%d\n", gf_dev->nav_mode);
+
+	return simple_read_from_buffer(buf, count, lo, page, strlen(page));
+}
+
+static const struct file_operations proc_nav_mode = {
+	.write = set_nav_mode,
+	.read = get_nav_mode,
+	.open = simple_open,
+	.owner = THIS_MODULE,
+};
+
 static struct class *gf_class;
 #if defined(USE_SPI_BUS)
 static int gf_probe(struct spi_device *spi)
@@ -837,8 +891,11 @@ static int gf_probe(struct platform_device *pdev)
 	gf_disable_irq(gf_dev);
 	gpio_set_value(gf_dev->reset_gpio, 0);
 
+	gf_dev->nav_mode = GF_MODE_GESTURE;
+
 	procdir = proc_mkdir("fingerprint", NULL);
 	proc_create_data("disable", S_IWUSR, procdir, &proc_disable, NULL);
+	proc_create_data("nav_mode", S_IWUSR, procdir, &proc_nav_mode, NULL);
 
 	pr_info("version V%d.%d.%02d\n", VER_MAJOR, VER_MINOR, PATCH_LEVEL);
 
