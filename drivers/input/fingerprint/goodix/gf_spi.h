@@ -154,6 +154,7 @@ struct gf_dev {
 	int project_version;
 	bool disabled;
 	int nav_mode;
+	bool finger_down;
 };
 /*liuyan 2017/7/28 add*/
 int gf_pinctrl_init(struct gf_dev* gf_dev);

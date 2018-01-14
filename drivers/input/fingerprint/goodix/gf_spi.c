@@ -270,6 +270,8 @@ static void nav_event_input(struct gf_dev *gf_dev, gf_nav_event_t nav_event)
 		if (nav_mode == GF_MODE_BUTTON) {
 			input_report_key(gf_dev->input, GF_KEY_INPUT_CAMERA, 1);
 			input_sync(gf_dev->input);
+		} else {
+			gf_dev->finger_down = true;
 		}
 		break;
 
@@ -278,26 +280,33 @@ static void nav_event_input(struct gf_dev *gf_dev, gf_nav_event_t nav_event)
 		if (nav_mode == GF_MODE_BUTTON) {
 			input_report_key(gf_dev->input, GF_KEY_INPUT_CAMERA, 0);
 			input_sync(gf_dev->input);
+		} else if (gf_dev->finger_down) {
+			nav_input = GF_KEY_INPUT_BACK;
+			gf_dev->finger_down = false;
 		}
 		break;
 
 	case GF_NAV_DOWN:
 		nav_input = GF_NAV_INPUT_DOWN;
+		gf_dev->finger_down = false;
 		pr_debug("%s nav down\n", __func__);
 		break;
 
 	case GF_NAV_UP:
 		nav_input = GF_NAV_INPUT_UP;
+		gf_dev->finger_down = false;
 		pr_debug("%s nav up\n", __func__);
 		break;
 
 	case GF_NAV_LEFT:
 		nav_input = GF_NAV_INPUT_LEFT;
+		gf_dev->finger_down = false;
 		pr_debug("%s nav left\n", __func__);
 		break;
 
 	case GF_NAV_RIGHT:
 		nav_input = GF_NAV_INPUT_RIGHT;
+		gf_dev->finger_down = false;
 		pr_debug("%s nav right\n", __func__);
 		break;
 
@@ -313,6 +322,7 @@ static void nav_event_input(struct gf_dev *gf_dev, gf_nav_event_t nav_event)
 
 	case GF_NAV_LONG_PRESS:
 		nav_input = GF_NAV_INPUT_LONG_PRESS;
+		gf_dev->finger_down = false;
 		pr_debug("%s nav long press\n", __func__);
 		break;
 
