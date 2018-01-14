@@ -3802,8 +3802,10 @@ static int init_synaptics_proc(void)
 	CREATE_PROC_NODE(touchpanel, touch_press, 0666);
 
 #ifdef SUPPORT_TP_TOUCHKEY
-	CREATE_PROC_NODE(s1302, key_rep, 0666);
-	CREATE_PROC_NODE(touchpanel, key_disable, 0666);
+	if (!ts_g->support_1080x2160_tp) {
+		CREATE_PROC_NODE(s1302, key_rep, 0666);
+		CREATE_PROC_NODE(touchpanel, key_disable, 0666);
+	}
 #endif
 
 	return ret;
