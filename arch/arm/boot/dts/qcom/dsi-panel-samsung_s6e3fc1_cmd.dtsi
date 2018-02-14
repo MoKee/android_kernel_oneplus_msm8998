@@ -59,9 +59,10 @@
 			15 01 00 00 00 00 02 55 00
 			05 01 00 00 00 00 02 29 00
 		];
-
-		qcom,mdss-dsi-off-command = [05 01 00 00 0A 00 02 28 00
-					05 01 00 00 A0 00 02 10 00];
+		qcom,mdss-dsi-off-command = [
+			05 01 00 00 0A 00 02 28 00
+			05 01 00 00 A0 00 02 10 00
+		];
 		qcom,mdss-dsi-on-command-state = "dsi_lp_mode";
 		qcom,mdss-dsi-off-command-state = "dsi_hs_mode";
 		qcom,mdss-dsi-h-sync-pulse = <1>;
@@ -99,11 +100,11 @@
 		/* Height + VBP + VFP + VSW */
 		//qcom,mdss-tear-check-sync-cfg-height = <1932>;
 		//qcom,mdss-tear-check-sync-init-val= <1920>; /* Height */
-	  //qcom,mdss-tear-check-sync-threshold-start = <4>;
-	  //qcom,mdss-tear-check-sync-threshold-continue = <4>;
-	  //qcom,mdss-tear-check-start-pos= <1920>; /* Height */
-	  //qcom,mdss-tear-check-rd-ptr-trigger-intr= <1921>; /* Height + 1 */
-	  //qcom,mdss-brightness-max-level = <1023>;
+		//qcom,mdss-tear-check-sync-threshold-start = <4>;
+		//qcom,mdss-tear-check-sync-threshold-continue = <4>;
+		//qcom,mdss-tear-check-start-pos= <1920>; /* Height */
+		//qcom,mdss-tear-check-rd-ptr-trigger-intr= <1921>; /* Height + 1 */
+		//qcom,mdss-brightness-max-level = <1023>;
 		qcom,mdss-dsi-high-brightness-panel;
 		qcom,mdss-dsi-panel-acl-command = [15 01 00 00 00 00 02 55 00];
 		qcom,mdss-dsi-acl-command-state = "dsi_hs_mode";
@@ -112,19 +113,15 @@
 		qcom,mdss-dsi-panel-hbm-on-command = [15 01 00 00 00 00 02 53 E8];
 		qcom,mdss-dsi-panel-hbm-off-command = [15 01 00 00 00 00 02 53 28];
 		qcom,mdss-dsi-hbm-command-state = "dsi_hs_mode";
-		/**************************************/
-		//if you need read the lcd register value
-		//you can modify the qcom,mdss-dsi-id-command
-		qcom,mdss-dsi-read-reg-enable-command  = [39 01 00 00 00 00 03 F0 5A 5A];
+		qcom,mdss-dsi-read-reg-enable-command = [39 01 00 00 00 00 03 F0 5A 5A];
+		qcom,mdss-dsi-read-reg-enable-command-state = "dsi_lp_mode";
 		qcom,mdss-dsi-read-reg-disable-command = [29 01 00 00 00 00 03 F0 A5 A5];
+		qcom,mdss-dsi-read-reg-disable-command-state = "dsi_lp_mode";
 		qcom,mdss-dsi-packetsizetxcmds-command = [37 01 00 00 00 00 02 07 00];
-		qcom,mdss-dsi-readpostxcmds-command =     [15 01 00 00 00 00 02 B0 00];
-		//read C3 25~35th , 25=0x19
-		qcom,mdss-dsi-id-command = [ 06 01 00 00 00 00 01 C3 0A 19];
 		qcom,mdss-dsi-packetsizetxcmds-command-state = "dsi_lp_mode";
-		qcom,mdss-dsi-readpostxcmds-command-state    = "dsi_lp_mode";
-		qcom,mdss-dsi-read-reg-enable-command-state  =  "dsi_lp_mode";
-		qcom,mdss-dsi-read-reg-disable-command-state =  "dsi_lp_mode";
+		qcom,mdss-dsi-readpostxcmds-command = [15 01 00 00 00 00 02 B0 00];
+		qcom,mdss-dsi-readpostxcmds-command-state = "dsi_lp_mode";
+		qcom,mdss-dsi-id-command = [ 06 01 00 00 00 00 01 C3 0A 19]; //read C3 25~35th , 25=0x19
 		qcom,mdss-dsi-id-command-state = "dsi_lp_mode";
 		qcom,mdss-bl-high2bit;
 		qcom,mdss-dsi-tx-eot-append;
@@ -135,146 +132,144 @@
 		qcom,mdss-dsi-panel-seria-num-day-index = <13>;
 		qcom,mdss-dsi-panel-seria-num-hour-index = <14>;
 		qcom,mdss-dsi-panel-seria-num-min-index = <15>;
-
-			qcom,mdss-dsi-panel-srgb-on-command = [
-				39 01 00 00 00 00 03 f0 5A 5A
-				39 01 00 00 00 00 02 BC 01
-				39 01 00 00 00 00 02 B0 01
-				39 01 00 00 00 00 02 BC 12
-				39 01 00 00 00 00 02 B0 2C
-				39 01 00 00 00 00 16 bc A3 05 04 48 CE 10 05 0A B1 55 EE CF BB 11 BF E1 DC 17 FD FE DC
-				39 01 00 00 00 00 02 b0 42
-				39 01 00 00 00 00 02 bc 03
-				39 01 00 00 00 00 02 b0 4B
-				39 01 00 00 00 00 02 bc AA
-				39 01 00 00 00 00 03 f0 A5 A5
-				];
-			qcom,mdss-dsi-panel-srgb-off-command = [
-				39 01 00 00 00 00 03 F0 5A 5A
-				39 01 00 00 00 00 03 BC E0 00
-				39 01 00 00 00 00 03 F0 A5 A5
-				];
-			qcom,mdss-dsi-srgb-command-state = "dsi_hs_mode";
-			qcom,mdss-dsi-panel-dci-p3-on-command = [
-				39 01 00 00 00 00 03 f0 5A 5A
-				39 01 00 00 00 00 02 BC 01
-				39 01 00 00 00 00 02 B0 01
-				39 01 00 00 00 00 02 BC 12
-				39 01 00 00 00 00 02 B0 2C
-				39 01 00 00 00 00 16 BC C6 00 00 1E CF 00 06 0A C3 26 EF CD E0 04 CE E9 DF 00 FD FE DC
-				39 01 00 00 00 00 02 b0 42
-				39 01 00 00 00 00 02 bc 03
-				39 01 00 00 00 00 02 b0 4B
-				39 01 00 00 00 00 02 bc AA
-				39 01 00 00 00 00 03 f0 A5 A5
-				];
-			qcom,mdss-dsi-panel-dci-p3-off-command = [
-				39 01 00 00 00 00 03 F0 5A 5A
-				39 01 00 00 00 00 03 BC E0 00
-				39 01 00 00 00 00 03 F0 A5 A5
-				];
-			qcom,mdss-dsi-dci-p3-command-state = "dsi_hs_mode";
-/*****************************************************************************/
-			qcom,mdss-dsi-panel-night-mode-on-command = [
-				39 01 00 00 00 00 03 f0 5A 5A
-				39 01 00 00 00 00 03 BC 01 12
-				39 01 00 00 00 00 02 B0 2C
-				39 01 00 00 00 00 16 BC A0 02 04 3B C7 12 08 07 A8 4B E7 C9 BF 0A B9 E3 DA 18 FF FE FA
-				39 01 00 00 00 00 03 f0 A5 A5
-				];
-			qcom,mdss-dsi-panel-night-mode-off-command = [
-				39 01 00 00 00 00 03 F0 5A 5A
-				39 01 00 00 00 00 03 BC E0 00
-				39 01 00 00 00 00 03 F0 A5 A5
-				];
-			qcom,mdss-dsi-night-mode-command-state = "dsi_hs_mode";
-			qcom,mdss-dsi-panel-oneplus-mode-on-command = [
-				39 01 00 00 00 00 03 f0 5a 5a
-				39 01 00 00 00 00 03 bc 01 12
-				39 01 00 00 00 00 02 b0 2c
-				39 01 00 00 00 00 16 bc b4 02 04 05 ff 02 00 00 ff 00 ff ff f0 00 f0 e0 e1 18 ff fe fB
-				39 01 00 00 00 00 03 f0 a5 a5
-				39 01 00 00 00 00 03 f0 5a 5a
-				39 01 00 00 00 00 02 bc 01
-				39 01 00 00 00 00 02 b0 42
-				39 01 00 00 00 00 02 bc 03
-				39 01 00 00 00 00 02 b0 4b
-				39 01 00 00 00 00 02 bc 01
-				39 01 00 00 00 00 03 f0 a5 a5
-				];
-			qcom,mdss-dsi-panel-oneplus-mode-off-command = [
-				39 01 00 00 00 00 03 F0 5A 5A
-				39 01 00 00 00 00 03 BC E0 00
-				39 01 00 00 00 00 03 F0 A5 A5
-				];
-			qcom,mdss-dsi-read-mode-command-state = "dsi_hs_mode";
-			qcom,mdss-dsi-panel-adaption-mode-on-command = [
-				39 01 00 00 00 00 03 f0 5a 5a
-				39 01 00 00 00 00 03 bc 01 12
-				39 01 00 00 00 00 02 b0 2c
-				39 01 00 00 00 00 16 bc B8 03 04 45 E2 10 04 07 C1 4B EB D7 B8 0A BF FF ED 14 FF FF FA
-				39 01 00 00 00 00 03 f0 a5 a5
-				39 01 00 00 00 00 03 f0 5a 5a
-				39 01 00 00 00 00 02 bc 01
-				39 01 00 00 00 00 02 b0 42
-				39 01 00 00 00 00 02 bc 03
-				39 01 00 00 00 00 02 b0 4b
-				39 01 00 00 00 00 02 bc 01
-				39 01 00 00 00 00 03 f0 a5 a5
-				];
-			qcom,mdss-dsi-panel-adaption-mode-off-command = [
-				39 01 00 00 00 00 03 F0 5A 5A
-				39 01 00 00 00 00 03 BC E0 00
-				39 01 00 00 00 00 03 F0 A5 A5
-				];
-			qcom,mdss-dsi-adaption-mode-command-state = "dsi_hs_mode";
-
-/**************************************************************************/
-
+		qcom,mdss-dsi-panel-srgb-on-command = [
+			39 01 00 00 00 00 03 F0 5A 5A
+			39 01 00 00 00 00 02 BC 01
+			39 01 00 00 00 00 02 B0 01
+			39 01 00 00 00 00 02 BC 12
+			39 01 00 00 00 00 02 B0 2C
+			39 01 00 00 00 00 16 BC A3 05 04 48 CE 10 05 0A B1 55 EE CF BB 11 BF E1 DC 17 FD FE DC
+			39 01 00 00 00 00 02 B0 42
+			39 01 00 00 00 00 02 BC 03
+			39 01 00 00 00 00 02 B0 4B
+			39 01 00 00 00 00 02 BC AA
+			39 01 00 00 00 00 03 F0 A5 A5
+		];
+		qcom,mdss-dsi-panel-srgb-off-command = [
+			39 01 00 00 00 00 03 F0 5A 5A
+			39 01 00 00 00 00 03 BC E0 00
+			39 01 00 00 00 00 03 F0 A5 A5
+		];
+		qcom,mdss-dsi-srgb-command-state = "dsi_hs_mode";
+		qcom,mdss-dsi-panel-dci-p3-on-command = [
+			39 01 00 00 00 00 03 F0 5A 5A
+			39 01 00 00 00 00 02 BC 01
+			39 01 00 00 00 00 02 B0 01
+			39 01 00 00 00 00 02 BC 12
+			39 01 00 00 00 00 02 B0 2C
+			39 01 00 00 00 00 16 BC C6 00 00 1E CF 00 06 0A C3 26 EF CD E0 04 CE E9 DF 00 FD FE DC
+			39 01 00 00 00 00 02 B0 42
+			39 01 00 00 00 00 02 BC 03
+			39 01 00 00 00 00 02 B0 4B
+			39 01 00 00 00 00 02 BC AA
+			39 01 00 00 00 00 03 F0 A5 A5
+		];
+		qcom,mdss-dsi-panel-dci-p3-off-command = [
+			39 01 00 00 00 00 03 F0 5A 5A
+			39 01 00 00 00 00 03 BC E0 00
+			39 01 00 00 00 00 03 F0 A5 A5
+		];
+		qcom,mdss-dsi-dci-p3-command-state = "dsi_hs_mode";
+		qcom,mdss-dsi-panel-night-mode-on-command = [
+			39 01 00 00 00 00 03 F0 5A 5A
+			39 01 00 00 00 00 03 BC 01 12
+			39 01 00 00 00 00 02 B0 2C
+			39 01 00 00 00 00 16 BC A0 02 04 3B C7 12 08 07 A8 4B E7 C9 BF 0A B9 E3 DA 18 FF FE FA
+			39 01 00 00 00 00 03 F0 A5 A5
+		];
+		qcom,mdss-dsi-panel-night-mode-off-command = [
+			39 01 00 00 00 00 03 F0 5A 5A
+			39 01 00 00 00 00 03 BC E0 00
+			39 01 00 00 00 00 03 F0 A5 A5
+		];
+		qcom,mdss-dsi-night-mode-command-state = "dsi_hs_mode";
+		qcom,mdss-dsi-panel-oneplus-mode-on-command = [
+			39 01 00 00 00 00 03 F0 5A 5A
+			39 01 00 00 00 00 03 BC 01 12
+			39 01 00 00 00 00 02 B0 2C
+			39 01 00 00 00 00 16 BC B4 02 04 05 FF 02 00 00 FF 00 FF FF F0 00 F0 E0 E1 18 FF FE FB
+			39 01 00 00 00 00 03 F0 A5 A5
+			39 01 00 00 00 00 03 F0 5A 5A
+			39 01 00 00 00 00 02 BC 01
+			39 01 00 00 00 00 02 B0 42
+			39 01 00 00 00 00 02 BC 03
+			39 01 00 00 00 00 02 B0 4B
+			39 01 00 00 00 00 02 BC 01
+			39 01 00 00 00 00 03 F0 A5 A5
+		];
+		qcom,mdss-dsi-panel-oneplus-mode-off-command = [
+			39 01 00 00 00 00 03 F0 5A 5A
+			39 01 00 00 00 00 03 BC E0 00
+			39 01 00 00 00 00 03 F0 A5 A5
+		];
+		qcom,mdss-dsi-read-mode-command-state = "dsi_hs_mode";
+		qcom,mdss-dsi-panel-adaption-mode-on-command = [
+			39 01 00 00 00 00 03 F0 5A 5A
+			39 01 00 00 00 00 03 BC 01 12
+			39 01 00 00 00 00 02 B0 2C
+			39 01 00 00 00 00 16 BC B8 03 04 45 E2 10 04 07 C1 4B EB D7 B8 0A BF FF ED 14 FF FF FA
+			39 01 00 00 00 00 03 F0 A5 A5
+			39 01 00 00 00 00 03 F0 5A 5A
+			39 01 00 00 00 00 02 BC 01
+			39 01 00 00 00 00 02 B0 42
+			39 01 00 00 00 00 02 BC 03
+			39 01 00 00 00 00 02 B0 4B
+			39 01 00 00 00 00 02 BC 01
+			39 01 00 00 00 00 03 F0 A5 A5
+		];
+		qcom,mdss-dsi-panel-adaption-mode-off-command = [
+			39 01 00 00 00 00 03 F0 5A 5A
+			39 01 00 00 00 00 03 BC E0 00
+			39 01 00 00 00 00 03 F0 A5 A5
+		];
+		qcom,mdss-dsi-adaption-mode-command-state = "dsi_hs_mode";
 		cm,mdss-livedisplay-cabc-cmd = [
-				15 01 00 00 00 00 02 55 00];
+			15 01 00 00 00 00 02 55 00
+		];
 		cm,mdss-livedisplay-cabc-ui-value = <0x01>;
 		cm,mdss-livedisplay-cabc-image-value = <0x02>;
 		cm,mdss-livedisplay-cabc-video-value = <0x03>;
 		cm,mdss-livedisplay-hbm-on-cmd = [
-				15 01 00 00 00 00 02 53 E0];
+			15 01 00 00 00 00 02 53 E0
+		];
 		cm,mdss-livedisplay-hbm-off-cmd = [
-				15 01 00 00 00 00 02 53 20];
+			15 01 00 00 00 00 02 53 20
+		];
 		cm,mdss-livedisplay-srgb-on-cmd = [
-				39 01 00 00 00 00 03 f0 5A 5A
-				39 01 00 00 00 00 02 BC 01
-				39 01 00 00 00 00 02 B0 01
-				39 01 00 00 00 00 02 BC 12
-				39 01 00 00 00 00 02 B0 2C
-				39 01 00 00 00 00 16 bc A3 05 04 48 CE 10 05 0A B1 55 EE CF BB 11 BF E1 DC 17 FD FE DC
-				39 01 00 00 00 00 02 b0 42
-				39 01 00 00 00 00 02 bc 03
-				39 01 00 00 00 00 02 b0 4B
-				39 01 00 00 00 00 02 bc AA
-				39 01 00 00 00 00 03 f0 A5 A5
-				];
+			39 01 00 00 00 00 03 F0 5A 5A
+			39 01 00 00 00 00 02 BC 01
+			39 01 00 00 00 00 02 B0 01
+			39 01 00 00 00 00 02 BC 12
+			39 01 00 00 00 00 02 B0 2C
+			39 01 00 00 00 00 16 BC A3 05 04 48 CE 10 05 0A B1 55 EE CF BB 11 BF E1 DC 17 FD FE DC
+			39 01 00 00 00 00 02 B0 42
+			39 01 00 00 00 00 02 BC 03
+			39 01 00 00 00 00 02 B0 4B
+			39 01 00 00 00 00 02 BC AA
+			39 01 00 00 00 00 03 F0 A5 A5
+		];
 		cm,mdss-livedisplay-srgb-off-cmd = [
-				39 01 00 00 00 00 03 F0 5A 5A
-				39 01 00 00 00 00 03 BC E0 00
-				39 01 00 00 00 00 03 F0 A5 A5
-				];
+			39 01 00 00 00 00 03 F0 5A 5A
+			39 01 00 00 00 00 03 BC E0 00
+			39 01 00 00 00 00 03 F0 A5 A5
+		];
 		cm,mdss-livedisplay-dci-p3-on-cmd = [
-				39 01 00 00 00 00 03 f0 5A 5A
-				39 01 00 00 00 00 02 BC 01
-				39 01 00 00 00 00 02 B0 01
-				39 01 00 00 00 00 02 BC 12
-				39 01 00 00 00 00 02 B0 2C
-				39 01 00 00 00 00 16 BC C6 00 00 1E CF 00 06 0A C3 26 EF CD E0 04 CE E9 DF 00 FD FE DC
-				39 01 00 00 00 00 02 b0 42
-				39 01 00 00 00 00 02 bc 03
-				39 01 00 00 00 00 02 b0 4B
-				39 01 00 00 00 00 02 bc AA
-				39 01 00 00 00 00 03 f0 A5 A5
-				];
+			39 01 00 00 00 00 03 F0 5A 5A
+			39 01 00 00 00 00 02 BC 01
+			39 01 00 00 00 00 02 B0 01
+			39 01 00 00 00 00 02 BC 12
+			39 01 00 00 00 00 02 B0 2C
+			39 01 00 00 00 00 16 BC C6 00 00 1E CF 00 06 0A C3 26 EF CD E0 04 CE E9 DF 00 FD FE DC
+			39 01 00 00 00 00 02 B0 42
+			39 01 00 00 00 00 02 BC 03
+			39 01 00 00 00 00 02 B0 4B
+			39 01 00 00 00 00 02 BC AA
+			39 01 00 00 00 00 03 F0 A5 A5
+		];
 		cm,mdss-livedisplay-dci-p3-off-cmd = [
-				39 01 00 00 00 00 03 F0 5A 5A
-				39 01 00 00 00 00 03 BC E0 00
-				39 01 00 00 00 00 03 F0 A5 A5
-				];
+			39 01 00 00 00 00 03 F0 5A 5A
+			39 01 00 00 00 00 03 BC E0 00
+			39 01 00 00 00 00 03 F0 A5 A5
+		];
 	};
 };
