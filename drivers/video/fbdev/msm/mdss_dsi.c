@@ -2867,6 +2867,9 @@ static int mdss_dsi_event_handler(struct mdss_panel_data *pdata,
 	case MDSS_EVENT_PANEL_GET_COLOR_PROFILE:
 		rc = mdss_dsi_panel_get_color_profile(ctrl_pdata);
 		break;
+	case MDSS_EVENT_PANEL_GET_COLOR_PROFILE_CAPABILITIES:
+		rc = mdss_dsi_panel_get_color_profile_capabilities(ctrl_pdata);
+		break;
 	default:
 		pr_debug("%s: unhandled event=%d\n", __func__, event);
 		break;
