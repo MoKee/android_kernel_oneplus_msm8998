@@ -202,7 +202,7 @@
 			39 01 00 00 00 00 03 BC E0 00
 			39 01 00 00 00 00 03 F0 A5 A5
 		];
-		qcom,mdss-dsi-read-mode-command-state = "dsi_hs_mode";
+		qcom,mdss-dsi-oneplus-mode-command-state = "dsi_hs_mode";
 		qcom,mdss-dsi-panel-adaption-mode-on-command = [
 			39 01 00 00 00 00 03 F0 5A 5A
 			39 01 00 00 00 00 03 BC 01 12
