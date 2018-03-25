@@ -242,6 +242,7 @@ static struct page **get_pages(struct drm_gem_object *obj)
 		if (IS_ERR(msm_obj->sgt)) {
 			void *ptr = ERR_CAST(msm_obj->sgt);
 
+			dev_err(dev->dev, "failed to allocate sgt\n");
 			msm_obj->sgt = NULL;
 			return ptr;
 		}
@@ -296,6 +297,7 @@ static void put_pages(struct drm_gem_object *obj)
 
 		if (msm_obj->sgt)
 			sg_free_table(msm_obj->sgt);
+
 		kfree(msm_obj->sgt);
 
 		if (use_pages(obj)) {
