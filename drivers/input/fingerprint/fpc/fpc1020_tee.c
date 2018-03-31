@@ -30,6 +30,7 @@
  * as published by the Free Software Foundation.
  */
 
+#include <asm/uaccess.h>
 #include <linux/clk.h>
 #include <linux/delay.h>
 #include <linux/gpio.h>
@@ -41,6 +42,7 @@
 #include <linux/mutex.h>
 #include <linux/of.h>
 #include <linux/of_gpio.h>
+#include <linux/proc_fs.h>
 #include <linux/regulator/consumer.h>
 #include <soc/qcom/scm.h>
 
@@ -95,11 +97,13 @@ struct fpc1020_data {
 	struct notifier_block fb_notif;
     #endif
 	struct work_struct pm_work;
-	int proximity_state; /* 0:far 1:near */
+	bool disabled;
 	bool irq_enabled;
 	spinlock_t irq_lock;
 	struct completion irq_sent;
 };
+
+static struct fpc1020_data *current_fpc1020_data = NULL;
 
 static int fpc1020_request_named_gpio(struct fpc1020_data *fpc1020,
 		const char *label, int *gpio)
@@ -431,25 +435,46 @@ static ssize_t sensor_version_get(struct device* device,
 
 static DEVICE_ATTR(sensor_version, S_IRUSR , sensor_version_get, NULL);
 
-static ssize_t proximity_state_set(struct device *dev,
-	struct device_attribute *attr, const char *buf, size_t count)
+static ssize_t disable_set(struct file *file,
+               const char __user *buf, size_t count, loff_t *lo)
 {
-	struct fpc1020_data *fpc1020 = dev_get_drvdata(dev);
+	char page[10] = {0};
 	int rc, val;
 
-	rc = kstrtoint(buf, 10, &val);
+	if (!current_fpc1020_data) {
+		return -ENODEV;
+	}
+
+	rc = copy_from_user(page, buf, count);
+	if (rc) {
+		return -EINVAL;
+	}
+
+	rc = kstrtoint(page, 10, &val);
 	if (rc)
 		return -EINVAL;
 
-	fpc1020->proximity_state = !!val;
+	current_fpc1020_data->disabled = !!val;
 
-	if (!fpc1020->screen_state)
-		set_fpc_irq(fpc1020, !fpc1020->proximity_state);
+	if (!current_fpc1020_data->screen_state)
+		set_fpc_irq(current_fpc1020_data, !current_fpc1020_data->disabled);
 
 	return count;
 }
 
-static DEVICE_ATTR(proximity_state, S_IWUSR, NULL, proximity_state_set);
+static ssize_t disable_get(struct file *file,
+               char __user *buf, size_t count, loff_t *lo)
+{
+	char page[10];
+
+	if (!current_fpc1020_data) {
+		return -ENODEV;
+	}
+
+	sprintf(page, "%d\n", current_fpc1020_data->disabled ? 1 : 0);
+
+	return simple_read_from_buffer(buf, count, lo, page, strlen(page));
+}
 
 static struct attribute *attributes[] = {
 	//&dev_attr_hw_reset.attr,
@@ -459,8 +484,14 @@ static struct attribute *attributes[] = {
 	&dev_attr_screen_state.attr,
 	&dev_attr_sensor_version.attr,
 	&dev_attr_report_key.attr,
-	&dev_attr_proximity_state.attr,
 	NULL
+};
+
+static const struct file_operations proc_disable = {
+	.write = disable_set,
+	.read = disable_get,
+	.open = simple_open,
+	.owner = THIS_MODULE,
 };
 
 static const struct attribute_group attribute_group = {
@@ -611,6 +642,7 @@ static irqreturn_t fpc1020_irq_handler(int irq, void *handle)
 static int fpc1020_probe(struct platform_device *pdev)
 {
 	struct device *dev = &pdev->dev;
+	struct proc_dir_entry *procdir;
 	int rc = 0;
 	unsigned long irqf;
 	struct device_node *np;
@@ -725,6 +757,9 @@ static int fpc1020_probe(struct platform_device *pdev)
 		goto exit;
 	}
 	
+	procdir = proc_mkdir("fingerprint", NULL);
+	proc_create_data("disable", S_IWUSR, procdir, &proc_disable, NULL);
+
     #if 0 //changhua remove HW reset here,move to HAL,after spi cs pin become high
 	rc = gpio_direction_output(fpc1020->rst_gpio, 1);
 
@@ -760,6 +795,7 @@ static int fpc1020_probe(struct platform_device *pdev)
     *   
     */
 	dev_info(dev, "%s: ok\n", __func__);
+	current_fpc1020_data = fpc1020;
 exit:
 	return rc;
 }
