@@ -821,71 +821,6 @@ static int mdss_dsi_panel_apply_display_setting(struct mdss_panel_data *pdata,
 	return 0;
 }
 
-int mdss_dsi_panel_set_color_profile(struct mdss_dsi_ctrl_pdata *ctrl, int profile)
-{
-	struct dsi_panel_cmds *cmds = NULL;
-
-	mutex_lock(&ctrl->panel_mode_lock);
-
-	if (ctrl->last_color_profile == profile) {
-		pr_err("%s: Skipped: profile not changed: %d\n", __func__, profile);
-		goto end;
-	}
-
-	pr_err("%s: Changing color_profile %d -> %d\n",
-		__func__, ctrl->last_color_profile, profile);
-
-	if (profile == PROFILE_NONE) {
-		switch (ctrl -> last_color_profile) {
-			case PROFILE_SRGB:
-				cmds = &ctrl->srgb_off_cmds;
-				break;
-			case PROFILE_ADOBE_RGB:
-				// noop, deprecated
-				break;
-			case PROFILE_DCI_P3:
-				cmds = &ctrl->dci_p3_off_cmds;
-				break;
-		}
-	} else {
-		switch (profile) {
-			case PROFILE_SRGB:
-				cmds = &ctrl->srgb_on_cmds;
-				break;
-			case PROFILE_ADOBE_RGB:
-				// noop, deprecated
-				break;
-			case PROFILE_DCI_P3:
-				cmds = &ctrl->dci_p3_on_cmds;
-				break;
-		}
-	}
-
-	if (cmds == NULL) {
-		pr_err("%s: Nothing to do.\n", __func__);
-		goto end;
-	}
-
-	if (!cmds->cmd_cnt) {
-		pr_err("%s: The panel does not support mode: %d\n", __func__, profile);
-		goto end;
-	}
-
-	mdss_dsi_panel_cmds_send(ctrl, cmds, CMD_REQ_COMMIT);
-	pr_err("%s: Panel switched to mode: %d\n", __func__, profile);
-
-	ctrl->last_color_profile = profile;
-
-end:
-	mutex_unlock(&ctrl->panel_mode_lock);
-	return 0;
-}
-
-int mdss_dsi_panel_get_color_profile(struct mdss_dsi_ctrl_pdata *ctrl)
-{
-	return ctrl->color_profile;
-}
-
 static void mdss_dsi_panel_switch_mode(struct mdss_panel_data *pdata,
 							int mode)
 {
@@ -1055,9 +990,6 @@ static int mdss_dsi_panel_on(struct mdss_panel_data *pdata)
 	if (pdata->event_handler)
 		pdata->event_handler(pdata, MDSS_EVENT_UPDATE_LIVEDISPLAY,
 				(void *)(unsigned long) MODE_UPDATE_ALL);
-
-	ctrl->last_color_profile = PROFILE_NONE;
-	mdss_dsi_panel_set_color_profile(ctrl, mdss_dsi_panel_get_color_profile(ctrl));
 
 	/* Ensure low persistence mode is set as before */
 	mdss_dsi_panel_apply_display_setting(pdata, pinfo->persist_mode);
@@ -3068,20 +3000,6 @@ static int mdss_panel_parse_dt(struct device_node *np,
 
 	mdss_livedisplay_parse_dt(np, pinfo);
 
-	mdss_dsi_parse_dcs_cmds(np, &ctrl_pdata->srgb_on_cmds,
-		"qcom,mdss-dsi-panel-srgb-on-command",
-		"qcom,mdss-dsi-srgb-command-state");
-	mdss_dsi_parse_dcs_cmds(np, &ctrl_pdata->srgb_off_cmds,
-		"qcom,mdss-dsi-panel-srgb-off-command",
-		"qcom,mdss-dsi-srgb-command-state");
-
-	mdss_dsi_parse_dcs_cmds(np, &ctrl_pdata->dci_p3_on_cmds,
-		"qcom,mdss-dsi-panel-dci-p3-on-command",
-		"qcom,mdss-dsi-dci-p3-command-state");
-	mdss_dsi_parse_dcs_cmds(np, &ctrl_pdata->dci_p3_off_cmds,
-		"qcom,mdss-dsi-panel-dci-p3-off-command",
-		"qcom,mdss-dsi-dci-p3-command-state");
-
 	return 0;
 
 error:
@@ -3132,8 +3050,6 @@ int mdss_dsi_panel_init(struct device_node *node,
 	ctrl_pdata->panel_data.apply_display_setting =
 			mdss_dsi_panel_apply_display_setting;
 	ctrl_pdata->switch_mode = mdss_dsi_panel_switch_mode;
-
-	mutex_init(&ctrl_pdata->panel_mode_lock);
 
 	return 0;
 }
