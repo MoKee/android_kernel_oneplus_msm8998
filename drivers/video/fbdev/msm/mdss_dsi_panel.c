@@ -904,11 +904,6 @@ int mdss_dsi_panel_get_color_profile(struct mdss_dsi_ctrl_pdata *ctrl)
 	return ctrl->color_profile;
 }
 
-int mdss_dsi_panel_get_color_profile_capabilities(struct mdss_dsi_ctrl_pdata *ctrl)
-{
-	return ctrl->color_profile_caps;
-}
-
 static void mdss_dsi_panel_switch_mode(struct mdss_panel_data *pdata,
 							int mode)
 {
@@ -2830,27 +2825,6 @@ exit:
 	return rc;
 }
 
-static int mdss_panel_parse_color_profile(struct device_node *np,
-			int profile_id,
-			struct dsi_panel_cmds *on_cmds, char *on_cmd_key,
-			struct dsi_panel_cmds *off_cmds, char *off_cmd_key,
-			char *link_key)
-{
-	int rc;
-
-	rc = mdss_dsi_parse_dcs_cmds(np, on_cmds, on_cmd_key, link_key);
-	if (rc != 0) {
-		return 0;
-	}
-
-	rc = mdss_dsi_parse_dcs_cmds(np, off_cmds, off_cmd_key, link_key);
-	if (rc != 0) {
-		return 0;
-	}
-
-	return 1 << (profile_id - 1);
-}
-
 static int mdss_panel_parse_dt(struct device_node *np,
 			struct mdss_dsi_ctrl_pdata *ctrl_pdata)
 {
@@ -3112,36 +3086,39 @@ static int mdss_panel_parse_dt(struct device_node *np,
 
 	mdss_livedisplay_parse_dt(np, pinfo);
 
-	ctrl_pdata->color_profile_caps = 0;
-
-	ctrl_pdata->color_profile_caps |= mdss_panel_parse_color_profile(np,
-		PROFILE_SRGB,
-		&ctrl_pdata->srgb_on_cmds, "qcom,mdss-dsi-panel-srgb-on-command",
-		&ctrl_pdata->srgb_off_cmds, "qcom,mdss-dsi-panel-srgb-off-command",
+	mdss_dsi_parse_dcs_cmds(np, &ctrl_pdata->srgb_on_cmds,
+		"qcom,mdss-dsi-panel-srgb-on-command",
+		"qcom,mdss-dsi-srgb-command-state");
+	mdss_dsi_parse_dcs_cmds(np, &ctrl_pdata->srgb_off_cmds,
+		"qcom,mdss-dsi-panel-srgb-off-command",
 		"qcom,mdss-dsi-srgb-command-state");
 
-	ctrl_pdata->color_profile_caps |= mdss_panel_parse_color_profile(np,
-		PROFILE_DCI_P3,
-		&ctrl_pdata->dci_p3_on_cmds, "qcom,mdss-dsi-panel-dci-p3-on-command",
-		&ctrl_pdata->dci_p3_off_cmds, "qcom,mdss-dsi-panel-dci-p3-off-command",
+	mdss_dsi_parse_dcs_cmds(np, &ctrl_pdata->dci_p3_on_cmds,
+		"qcom,mdss-dsi-panel-dci-p3-on-command",
+		"qcom,mdss-dsi-dci-p3-command-state");
+	mdss_dsi_parse_dcs_cmds(np, &ctrl_pdata->dci_p3_off_cmds,
+		"qcom,mdss-dsi-panel-dci-p3-off-command",
 		"qcom,mdss-dsi-dci-p3-command-state");
 
-	ctrl_pdata->color_profile_caps |= mdss_panel_parse_color_profile(np,
-		PROFILE_NIGHT,
-		&ctrl_pdata->night_mode_on_cmds, "qcom,mdss-dsi-panel-night-mode-on-command",
-		&ctrl_pdata->night_mode_off_cmds, "qcom,mdss-dsi-panel-night-mode-off-command",
+	mdss_dsi_parse_dcs_cmds(np, &ctrl_pdata->night_mode_on_cmds,
+		"qcom,mdss-dsi-panel-night-mode-on-command",
+		"qcom,mdss-dsi-night-mode-command-state");
+	mdss_dsi_parse_dcs_cmds(np, &ctrl_pdata->night_mode_off_cmds,
+		"qcom,mdss-dsi-panel-night-mode-off-command",
 		"qcom,mdss-dsi-night-mode-command-state");
 
-	ctrl_pdata->color_profile_caps |= mdss_panel_parse_color_profile(np,
-		PROFILE_ONEPLUS,
-		&ctrl_pdata->oneplus_mode_on_cmds, "qcom,mdss-dsi-panel-oneplus-mode-on-command",
-		&ctrl_pdata->oneplus_mode_off_cmds, "qcom,mdss-dsi-panel-oneplus-mode-off-command",
+	mdss_dsi_parse_dcs_cmds(np, &ctrl_pdata->oneplus_mode_on_cmds,
+		"qcom,mdss-dsi-panel-oneplus-mode-on-command",
+		"qcom,mdss-dsi-oneplus-mode-command-state");
+	mdss_dsi_parse_dcs_cmds(np, &ctrl_pdata->oneplus_mode_off_cmds,
+		"qcom,mdss-dsi-panel-oneplus-mode-off-command",
 		"qcom,mdss-dsi-oneplus-mode-command-state");
 
-	ctrl_pdata->color_profile_caps |= mdss_panel_parse_color_profile(np,
-		PROFILE_ADAPTION,
-		&ctrl_pdata->adaption_mode_on_cmds, "qcom,mdss-dsi-panel-adaption-mode-on-command",
-		&ctrl_pdata->adaption_mode_off_cmds, "qcom,mdss-dsi-panel-adaption-mode-off-command",
+	mdss_dsi_parse_dcs_cmds(np, &ctrl_pdata->adaption_mode_on_cmds,
+		"qcom,mdss-dsi-panel-adaption-mode-on-command",
+		"qcom,mdss-dsi-adaption-mode-command-state");
+	mdss_dsi_parse_dcs_cmds(np, &ctrl_pdata->adaption_mode_off_cmds,
+		"qcom,mdss-dsi-panel-adaption-mode-off-command",
 		"qcom,mdss-dsi-adaption-mode-command-state");
 
 	return 0;

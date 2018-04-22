@@ -950,20 +950,6 @@ static ssize_t mdss_fb_set_color_profile(struct device *dev,
 	return count;
 }
 
-static ssize_t mdss_fb_get_color_profile_caps(struct device *dev,
-		struct device_attribute *attr, char *buf)
-{
-	struct fb_info *fbi = dev_get_drvdata(dev);
-	struct msm_fb_data_type *mfd = fbi->par;
-	int ret = 0;
-	int caps = 0;
-
-	caps = mdss_fb_send_panel_event(mfd, MDSS_EVENT_PANEL_GET_COLOR_PROFILE_CAPABILITIES,
-			NULL);
-	ret = scnprintf(buf, PAGE_SIZE, "%d\n", caps);
-	return ret;
-}
-
 static DEVICE_ATTR(msm_fb_type, S_IRUGO, mdss_fb_get_type, NULL);
 static DEVICE_ATTR(msm_fb_split, S_IRUGO | S_IWUSR, mdss_fb_show_split,
 					mdss_fb_store_split);
@@ -987,8 +973,6 @@ static DEVICE_ATTR(msm_fb_persist_mode, S_IRUGO | S_IWUSR,
 static DEVICE_ATTR(idle_power_collapse, S_IRUGO, mdss_fb_idle_pc_notify, NULL);
 static DEVICE_ATTR(color_profile, S_IRUGO | S_IWUSR,
 	mdss_fb_get_color_profile, mdss_fb_set_color_profile);
-static DEVICE_ATTR(color_profile_caps, S_IRUGO,
-	mdss_fb_get_color_profile_caps, NULL);
 
 static struct attribute *mdss_fb_attrs[] = {
 	&dev_attr_msm_fb_type.attr,
@@ -1005,7 +989,6 @@ static struct attribute *mdss_fb_attrs[] = {
 	&dev_attr_msm_fb_persist_mode.attr,
 	&dev_attr_idle_power_collapse.attr,
 	&dev_attr_color_profile.attr,
-	&dev_attr_color_profile_caps.attr,
 	NULL,
 };
 

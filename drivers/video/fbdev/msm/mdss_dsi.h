@@ -597,8 +597,6 @@ struct mdss_dsi_ctrl_pdata {
 	int color_profile;
 	int last_color_profile;
 
-	int color_profile_caps;
-
 	struct dsi_panel_cmds srgb_on_cmds;
 	struct dsi_panel_cmds srgb_off_cmds;
 
@@ -738,7 +736,6 @@ void mdss_dsi_debug_bus_init(struct mdss_dsi_data *sdata);
 
 int mdss_dsi_panel_set_color_profile(struct mdss_dsi_ctrl_pdata *ctrl, int profile);
 int mdss_dsi_panel_get_color_profile(struct mdss_dsi_ctrl_pdata *ctrl);
-int mdss_dsi_panel_get_color_profile_capabilities(struct mdss_dsi_ctrl_pdata *ctrl);
 
 static inline const char *__mdss_dsi_pm_name(enum dsi_pm_type module)
 {
