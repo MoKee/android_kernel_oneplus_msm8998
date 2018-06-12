@@ -892,6 +892,12 @@ int acc_ctrlrequest(struct usb_composite_dev *cdev,
 		goto err;
 #endif
 
+	/*
+	 * If instance is not created which is the case in power off charging
+	 * mode, dev will be NULL. Hence return error if it is the case.
+	 */
+	if (!dev)
+		return -ENODEV;
 /*
  *	printk(KERN_INFO "acc_ctrlrequest "
  *			"%02x.%02x v%04x i%04x l%u\n",
