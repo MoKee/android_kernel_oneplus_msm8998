@@ -410,26 +410,6 @@ struct statsContext {
 	unsigned int magic;
 };
 
-struct linkspeedContext {
-	struct completion completion;
-	hdd_adapter_t *pAdapter;
-	unsigned int magic;
-};
-
-/**
- * struct random_mac_context - Context used with hdd_random_mac_callback
- * @random_mac_completion: Event on which hdd_set_random_mac will wait
- * @adapter: Pointer to adapter
- * @magic: For valid context this is set to ACTION_FRAME_RANDOM_CONTEXT_MAGIC
- * @set_random_addr: Status of random filter set
- */
-struct random_mac_context {
-	struct completion random_mac_completion;
-	hdd_adapter_t *adapter;
-	unsigned int magic;
-	bool set_random_addr;
-};
-
 extern spinlock_t hdd_context_lock;
 extern struct mutex hdd_init_deinit_lock;
 
@@ -437,9 +417,7 @@ extern struct mutex hdd_init_deinit_lock;
 #define PEER_INFO_CONTEXT_MAGIC 0x50494E46  /* PEER_INFO(PINF) */
 #define POWER_CONTEXT_MAGIC 0x504F5752  /* POWR */
 #define SNR_CONTEXT_MAGIC   0x534E5200  /* SNR */
-#define LINK_CONTEXT_MAGIC  0x4C494E4B  /* LINKSPEED */
 #define LINK_STATUS_MAGIC   0x4C4B5354  /* LINKSTATUS(LNST) */
-#define TEMP_CONTEXT_MAGIC  0x74656d70   /* TEMP (temperature) */
 #define BPF_CONTEXT_MAGIC 0x4575354    /* BPF */
 #define POWER_STATS_MAGIC 0x14111990
 #define RCPI_CONTEXT_MAGIC  0x7778888  /* RCPI */
@@ -1017,6 +995,14 @@ enum bss_stop_reason {
  * @vht_caps: VHT capabilities of current station
  * @reason_code: Disconnection reason code for current station
  * @rssi: RSSI of the current station reported from F/W
+ * @capability: Capability information of current station
+ * @rx_retry_cnt: Number of rx retries received from current station
+ *                Currently this feature is not supported from FW
+ * @rx_mc_bc_cnt: Multicast broadcast packet count received from
+ *              current station
+ * MSB of rx_mc_bc_cnt indicates whether FW supports rx_mc_bc_cnt
+ * feature or not, if first bit is 1 it indictes that FW supports this
+ * feature, if it is 0 it indicates FW doesn't support this feature
  */
 typedef struct {
 	bool isUsed;
@@ -1056,6 +1042,9 @@ typedef struct {
 	struct ieee80211_vht_cap vht_caps;
 	uint32_t reason_code;
 	int8_t rssi;
+	uint16_t capability;
+	uint32_t rx_mc_bc_cnt;
+	uint32_t rx_retry_cnt;
 } hdd_station_info_t;
 
 /**
@@ -1158,6 +1147,7 @@ struct hdd_ap_ctx_s {
 
 	/* Fw txrx stats info */
 	struct hdd_fw_txrx_stats txrx_stats;
+	qdf_atomic_t acs_in_progress;
 };
 
 typedef struct hdd_scaninfo_s {
@@ -1329,8 +1319,9 @@ struct hdd_adapter_s {
 	struct net_device_stats stats;
 	/** HDD statistics*/
 	hdd_stats_t hdd_stats;
-	/** linkspeed statistics */
-	tSirLinkSpeedInfo ls_stats;
+
+	/* estimated link speed */
+	u32 estimated_linkspeed;
 	/* SAP peer station info */
 	struct sir_peer_sta_info peer_sta_info;
 
@@ -1498,14 +1489,8 @@ struct hdd_adapter_s {
 	/* Time stamp for start RoC request */
 	uint64_t start_roc_ts;
 
-	/* State for synchronous OCB requests to WMI */
-	struct sir_ocb_set_config_response ocb_set_config_resp;
-	struct sir_ocb_get_tsf_timer_response ocb_get_tsf_timer_resp;
-	struct sir_dcc_get_stats_response *dcc_get_stats_resp;
-	struct sir_dcc_update_ndl_response dcc_update_ndl_resp;
-
-	/* MAC addresses used for OCB interfaces */
 #ifdef WLAN_FEATURE_DSRC
+	/* MAC addresses used for OCB interfaces */
 	struct qdf_mac_addr ocb_mac_address[QDF_MAX_CONCURRENCY_PERSONA];
 	int ocb_mac_addr_count;
 #endif
@@ -2164,7 +2149,6 @@ struct hdd_context_s {
 	/* mutex lock to block concurrent access */
 	struct mutex power_stats_lock;
 #endif
-	qdf_atomic_t is_acs_allowed;
 	struct hdd_cache_channels *original_channels;
 	qdf_mutex_t cache_channel_lock;
 };

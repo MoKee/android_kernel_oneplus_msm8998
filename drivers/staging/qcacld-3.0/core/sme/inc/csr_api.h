@@ -1303,6 +1303,9 @@ typedef struct tagCsrConfigParam {
 	uint8_t rx_ldpc_support_for_2g;
 	uint8_t max_amsdu_num;
 	uint8_t nSelect5GHzMargin;
+	uint32_t ho_delay_for_rx;
+	uint32_t min_delay_btw_roam_scans;
+	uint32_t roam_trigger_reason_bitmask;
 	uint8_t isCoalesingInIBSSAllowed;
 #ifdef FEATURE_WLAN_MCC_TO_SCC_SWITCH
 	uint8_t cc_switch_mode;
@@ -1392,6 +1395,7 @@ typedef struct tagCsrConfigParam {
 	struct sir_score_config bss_score_params;
 	uint32_t offload_11k_enable_bitmask;
 	struct csr_neighbor_report_offload_params neighbor_report_offload;
+	bool roam_force_rssi_trigger;
 } tCsrConfigParam;
 
 /* Tush */
@@ -1550,6 +1554,8 @@ typedef struct tagCsrRoamInfo {
 	int rssi;
 	int tx_rate;
 	int rx_rate;
+	tSirMacCapabilityInfo capability_info;
+	uint32_t rx_mc_bc_cnt;
 } tCsrRoamInfo;
 
 typedef struct tagCsrFreqScanInfo {
@@ -1593,6 +1599,7 @@ typedef struct sSirSmeAssocIndToUpperLayerCnf {
 
 	tDot11fIEHTCaps HTCaps;
 	tDot11fIEVHTCaps VHTCaps;
+	tSirMacCapabilityInfo capability_info;
 } tSirSmeAssocIndToUpperLayerCnf, *tpSirSmeAssocIndToUpperLayerCnf;
 
 typedef struct tagCsrSummaryStatsInfo {
