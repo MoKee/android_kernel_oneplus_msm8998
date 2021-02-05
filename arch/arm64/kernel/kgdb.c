@@ -241,7 +241,7 @@ static int kgdb_step_brk_fn(struct pt_regs *regs, unsigned int esr)
 	if (user_mode(regs))
 		return DBG_HOOK_ERROR;
 
-	kgdb_handle_exception(1, SIGTRAP, 0, regs);
+	kgdb_handle_exception(0, SIGTRAP, 0, regs);
 	return DBG_HOOK_HANDLED;
 }
 NOKPROBE_SYMBOL(kgdb_step_brk_fn);
@@ -305,8 +305,8 @@ static struct notifier_block kgdb_notifier = {
 };
 
 /*
- * kgdb_arch_init - Perform any architecture specific initalization.
- * This function will handle the initalization of any architecture
+ * kgdb_arch_init - Perform any architecture specific initialization.
+ * This function will handle the initialization of any architecture
  * specific callbacks.
  */
 int kgdb_arch_init(void)

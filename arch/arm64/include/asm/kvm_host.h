@@ -100,8 +100,8 @@ enum vcpu_sysreg {
 	TTBR1_EL1,	/* Translation Table Base Register 1 */
 	TCR_EL1,	/* Translation Control Register */
 	ESR_EL1,	/* Exception Syndrome Register */
-	AFSR0_EL1,	/* Auxilary Fault Status Register 0 */
-	AFSR1_EL1,	/* Auxilary Fault Status Register 1 */
+	AFSR0_EL1,	/* Auxiliary Fault Status Register 0 */
+	AFSR1_EL1,	/* Auxiliary Fault Status Register 1 */
 	FAR_EL1,	/* Fault Address Register */
 	MAIR_EL1,	/* Memory Attribute Indirection Register */
 	VBAR_EL1,	/* Vector Base Address Register */
@@ -258,8 +258,10 @@ struct kvm_vcpu_arch {
  * CP14 and CP15 live in the same array, as they are backed by the
  * same system registers.
  */
-#define vcpu_cp14(v,r)		((v)->arch.ctxt.copro[(r)])
-#define vcpu_cp15(v,r)		((v)->arch.ctxt.copro[(r)])
+#define CPx_BIAS		IS_ENABLED(CONFIG_CPU_BIG_ENDIAN)
+
+#define vcpu_cp14(v,r)		((v)->arch.ctxt.copro[(r) ^ CPx_BIAS])
+#define vcpu_cp15(v,r)		((v)->arch.ctxt.copro[(r) ^ CPx_BIAS])
 
 #ifdef CONFIG_CPU_BIG_ENDIAN
 #define vcpu_cp15_64_high(v,r)	vcpu_cp15((v),(r))
